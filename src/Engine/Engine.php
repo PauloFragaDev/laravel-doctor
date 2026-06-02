@@ -9,6 +9,7 @@ use LaravelDoctor\Diagnostics\Diagnostic;
 use LaravelDoctor\Diagnostics\DiagnosticCollector;
 use LaravelDoctor\Diagnostics\Severity;
 use LaravelDoctor\Rules\Rule;
+use LaravelDoctor\Runtime\RuntimeManifest;
 use LaravelDoctor\Scanner\SourceFile;
 use PhpParser\Error;
 use PhpParser\NodeTraverser;
