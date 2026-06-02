@@ -9,6 +9,7 @@ final readonly class SourceFile
     public function __construct(
         public string $path,
         public string $contents,
+        public SourceType $type = SourceType::Php,
     ) {
     }
 }
