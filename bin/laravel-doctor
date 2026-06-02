@@ -12,11 +12,13 @@ foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php
 
 use LaravelDoctor\Console\InspectCommand;
 use LaravelDoctor\Console\InstallCommand;
+use LaravelDoctor\Console\TuiCommand;
 use Symfony\Component\Console\Application;
 
 $app = new Application('laravel-doctor', '0.1.0');
 $inspect = new InspectCommand();
 $app->add($inspect);
 $app->add(new InstallCommand());
+$app->add(new TuiCommand());
 $app->setDefaultCommand((string) $inspect->getName());
 $app->run();
