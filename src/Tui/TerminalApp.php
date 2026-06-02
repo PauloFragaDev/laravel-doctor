@@ -21,6 +21,7 @@ use PhpTui\Tui\Extension\Core\Widget\BlockWidget;
 use PhpTui\Tui\Extension\Core\Widget\GridWidget;
 use PhpTui\Tui\Extension\Core\Widget\List\ListItem;
 use PhpTui\Tui\Extension\Core\Widget\ListWidget;
+use PhpTui\Tui\Extension\Core\Widget\ParagraphWidget;
 use PhpTui\Tui\Layout\Constraint;
 use PhpTui\Tui\Style\Style;
 use PhpTui\Tui\Text\Text;
@@ -28,12 +29,11 @@ use PhpTui\Tui\Text\Title;
 use PhpTui\Tui\Widget\Borders;
 use PhpTui\Tui\Widget\Direction;
 use PhpTui\Tui\Widget\Widget;
-use Throwable;
 
 /**
- * Entorno full-screen real con php-tui: paneles, navegación por flechas, búsqueda en vivo y
- * detalle del hallazgo. Integración-only (necesita TTY); la lógica de navegación/filtro vive
- * en EnvironmentState (testeada).
+ * Entorno full-screen real con php-tui: cabecera con score, barra de tabs de categoría +
+ * buscador, hallazgos en bloques por categoría, panel de detalle y footer de atajos. La lógica
+ * (navegación/filtro/agrupado) vive en EnvironmentState (testeada); esto es el bucle de E/S.
  */
 final class TerminalApp
 {
@@ -102,13 +102,13 @@ final class TerminalApp
             return false;
         }
         if ($char === 'q') {
-            return true; // salir
+            return true;
         }
         if ($char === '/') {
             $this->searching = true;
-        }
-        if ($char === 'b' && $state->screen === EnvironmentState::SCREEN_RESULTS) {
-            // toggle runtime + re-analizar el proyecto cargado
+        } elseif ($char === 'c' && $state->screen === EnvironmentState::SCREEN_RESULTS) {
+            $state->cycleCategory();
+        } elseif ($char === 'b' && $state->screen === EnvironmentState::SCREEN_RESULTS) {
             $this->boot = !$this->boot;
             $this->analyze($state, $state->loadedProjectName, $this->currentPath);
         }
@@ -131,6 +131,7 @@ final class TerminalApp
         match ($code) {
             KeyCode::Up => $state->moveUp(),
             KeyCode::Down => $state->moveDown(),
+            KeyCode::Right, KeyCode::Tab => $state->screen === EnvironmentState::SCREEN_RESULTS ? $state->cycleCategory() : null,
             KeyCode::Enter => $this->onEnter($state),
             KeyCode::Esc => $state->screen === EnvironmentState::SCREEN_RESULTS ? $state->back() : null,
             default => null,
@@ -160,8 +161,8 @@ final class TerminalApp
     {
         return GridWidget::default()
             ->direction(Direction::Vertical)
-            ->constraints(Constraint::length(3), Constraint::min(1), Constraint::length(3))
-            ->widgets($this->header($state), $this->body($state), $this->footer($state));
+            ->constraints(Constraint::length(3), Constraint::length(3), Constraint::min(1), Constraint::length(3))
+            ->widgets($this->header($state), $this->bar($state), $this->body($state), $this->footer($state));
     }
 
     private function header(EnvironmentState $state): Widget
@@ -181,6 +182,27 @@ final class TerminalApp
         return BlockWidget::default()->borders(Borders::ALL)->titles(Title::fromString($title));
     }
 
+    private function bar(EnvironmentState $state): Widget
+    {
+        $search = sprintf('🔎 %s%s', $state->search, $this->searching ? '_' : '');
+
+        if ($state->screen === EnvironmentState::SCREEN_RESULTS) {
+            $tabs = [];
+            foreach (EnvironmentState::CATEGORIES as $key => $label) {
+                $tabs[] = $key === $state->category
+                    ? '<options=bold;fg=cyan>[' . $label . ']</>'
+                    : '<fg=gray>' . $label . '</>';
+            }
+            $content = ' ' . implode('  ', $tabs) . '     ' . $search . ' ';
+        } else {
+            $content = ' ' . $search . ' ';
+        }
+
+        return BlockWidget::default()
+            ->borders(Borders::ALL)
+            ->widget(ParagraphWidget::fromText(Text::parse($content)));
+    }
+
     private function body(EnvironmentState $state): Widget
     {
         if ($state->screen === EnvironmentState::SCREEN_HOME) {
@@ -189,7 +211,7 @@ final class TerminalApp
 
         return GridWidget::default()
             ->direction(Direction::Horizontal)
-            ->constraints(Constraint::percentage(55), Constraint::percentage(45))
+            ->constraints(Constraint::percentage(60), Constraint::percentage(40))
             ->widgets($this->findingsPane($state), $this->detailPane($state));
     }
 
@@ -215,25 +237,36 @@ final class TerminalApp
 
     private function findingsPane(EnvironmentState $state): Widget
     {
-        $diagnostics = $state->visibleDiagnostics();
-        $items = array_map(
-            fn (Diagnostic $d) => ListItem::new(Text::parse(sprintf(
-                '%s %s  <fg=gray>%s</>',
+        $items = [];
+        foreach ($state->groupedRows() as $row) {
+            if ($row['kind'] === 'header') {
+                $items[] = ListItem::new(Text::parse(sprintf(
+                    '<options=bold>%s</> <fg=gray>(%d)</>',
+                    strtoupper((string) ($row['label'] ?? '')),
+                    (int) ($row['count'] ?? 0),
+                )));
+                continue;
+            }
+            /** @var Diagnostic $d */
+            $d = $row['diagnostic'];
+            $items[] = ListItem::new(Text::parse(sprintf(
+                '  %s %s  <fg=gray>%s</>',
                 $this->icon($d->severity),
                 $d->ruleId,
-                $this->relative($d->file),
-            ))),
-            $diagnostics,
-        );
+                $this->relative($d->file) . ($d->line > 0 ? ':' . $d->line : ''),
+            )));
+        }
+
+        $count = count($state->visibleFindings());
 
         return BlockWidget::default()
             ->borders(Borders::ALL)
-            ->titles(Title::fromString(sprintf(' Hallazgos (%d) ', count($diagnostics))))
+            ->titles(Title::fromString(sprintf(' Hallazgos (%d) ', $count)))
             ->widget(
                 ListWidget::default()
                     ->highlightSymbol('› ')
                     ->highlightStyle(Style::default()->cyan())
-                    ->select($state->resultIndex)
+                    ->select($count > 0 ? $state->selectedRowIndex() : null)
                     ->items(...$items),
             );
     }
@@ -241,34 +274,31 @@ final class TerminalApp
     private function detailPane(EnvironmentState $state): Widget
     {
         $d = $state->selectedDiagnostic();
-        $lines = [];
-        if ($d !== null) {
-            $lines = [
-                $this->icon($d->severity) . ' ' . $d->ruleId,
-                '',
+        $text = $d === null
+            ? '<fg=gray>Sin hallazgos.</>'
+            : sprintf(
+                "%s <options=bold>%s</>\n\n%s\n\n<fg=green>→ %s</>\n\n<fg=gray>%s</>",
+                $this->icon($d->severity),
+                $d->ruleId,
                 $d->message,
-                '',
-                '<fg=green>→ ' . $d->recommendation . '</>',
-                '',
-                '<fg=gray>' . $this->relative($d->file) . ($d->line > 0 ? ':' . $d->line : '') . '</>',
-            ];
-        }
-        $items = array_map(static fn (string $l) => ListItem::new(Text::parse($l)), $lines);
+                $d->recommendation,
+                $this->relative($d->file) . ($d->line > 0 ? ':' . $d->line : ''),
+            );
 
         return BlockWidget::default()
             ->borders(Borders::ALL)
             ->titles(Title::fromString(' Detalle '))
-            ->widget(ListWidget::default()->items(...$items));
+            ->widget(ParagraphWidget::fromText(Text::parse($text)));
     }
 
     private function footer(EnvironmentState $state): Widget
     {
         if ($this->searching) {
-            $title = sprintf(' buscar: %s_   (Enter/Esc para salir) ', $state->search);
+            $title = ' escribe para filtrar · Enter/Esc para salir de la búsqueda ';
         } elseif ($state->screen === EnvironmentState::SCREEN_HOME) {
             $title = ' ↑↓ mover · Enter abrir · / buscar · q salir ';
         } else {
-            $title = ' ↑↓ mover · / buscar · b runtime · Esc volver · q salir ';
+            $title = ' ↑↓ mover · Tab/c categoría · / buscar · b runtime · Esc volver · q salir ';
         }
 
         return BlockWidget::default()->borders(Borders::ALL)->titles(Title::fromString($title));

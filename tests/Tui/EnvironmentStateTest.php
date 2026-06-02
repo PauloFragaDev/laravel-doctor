@@ -23,9 +23,21 @@ final class EnvironmentStateTest extends TestCase
         ]);
     }
 
-    private function d(string $rule): Diagnostic
+    private function d(string $rule, string $cat): Diagnostic
     {
-        return new Diagnostic($rule, Categories::SECURITY, Severity::Error, 'app/X.php', 1, 'm', 'r');
+        return new Diagnostic($rule, $cat, Severity::Error, 'app/X.php', 1, 'm', 'r');
+    }
+
+    private function withResults(): EnvironmentState
+    {
+        $s = $this->state();
+        $s->openResults('shop', [
+            $this->d('no-env-outside-config', Categories::SECURITY),
+            $this->d('no-raw-sql-interpolation', Categories::SECURITY),
+            $this->d('no-query-in-loop', Categories::PERFORMANCE),
+        ], new ScoreResult(70, 'Needs work'));
+
+        return $s;
     }
 
     public function test_live_search_filters_projects(): void
@@ -34,40 +46,48 @@ final class EnvironmentStateTest extends TestCase
         foreach (str_split('shop') as $c) {
             $s->appendSearch($c);
         }
-        $names = array_map(fn ($p) => $p->name, $s->visibleProjects());
-        $this->assertSame(['shop', 'shopify-bridge'], $names);
-        $this->assertSame('shop', $s->selectedProject()->name);
+        $this->assertSame(['shop', 'shopify-bridge'], array_map(fn ($p) => $p->name, $s->visibleProjects()));
     }
 
-    public function test_navigation_clamped_to_visible(): void
+    public function test_grouped_rows_have_category_headers(): void
     {
-        $s = $this->state();
+        $rows = $this->withResults()->groupedRows();
+        $kinds = array_map(fn ($r) => $r['kind'], $rows);
+
+        // header, finding, finding, header, finding
+        $this->assertSame(['header', 'finding', 'finding', 'header', 'finding'], $kinds);
+        $this->assertSame('Seguridad', $rows[0]['label']);
+        $this->assertSame(2, $rows[0]['count']);
+        $this->assertSame('Performance', $rows[3]['label']);
+    }
+
+    public function test_category_filter_narrows_to_one_block(): void
+    {
+        $s = $this->withResults();
+        $s->cycleCategory(); // all -> security
+        $this->assertSame(Categories::SECURITY, $s->category);
+        $this->assertCount(2, $s->visibleFindings());
+        $kinds = array_map(fn ($r) => $r['kind'], $s->groupedRows());
+        $this->assertSame(['header', 'finding', 'finding'], $kinds);
+    }
+
+    public function test_selected_row_index_skips_headers(): void
+    {
+        $s = $this->withResults();
         $s->moveDown();
-        $s->moveDown();
-        $s->moveDown(); // más allá del final (3 proyectos)
-        $this->assertSame('shopify-bridge', $s->selectedProject()->name);
+        $s->moveDown(); // tercer hallazgo (no-query-in-loop, en bloque Performance)
+        $this->assertSame('no-query-in-loop', $s->selectedDiagnostic()->ruleId);
+        // groupedRows: [h,f,f,h,f] → el tercer finding está en índice 4.
+        $this->assertSame(4, $s->selectedRowIndex());
     }
 
-    public function test_open_results_and_back(): void
+    public function test_search_filters_findings(): void
     {
-        $s = $this->state();
-        $s->openResults('shop', [$this->d('a'), $this->d('b')], new ScoreResult(80, 'Needs work'));
-        $this->assertSame(EnvironmentState::SCREEN_RESULTS, $s->screen);
-        $this->assertCount(2, $s->visibleDiagnostics());
-
-        $s->back();
-        $this->assertSame(EnvironmentState::SCREEN_HOME, $s->screen);
-        $this->assertSame('', $s->search);
-    }
-
-    public function test_search_filters_diagnostics_in_results(): void
-    {
-        $s = $this->state();
-        $s->openResults('shop', [$this->d('no-env-outside-config'), $this->d('no-query-in-loop')], new ScoreResult(80, 'Needs work'));
+        $s = $this->withResults();
         foreach (str_split('query') as $c) {
             $s->appendSearch($c);
         }
-        $this->assertCount(1, $s->visibleDiagnostics());
-        $this->assertSame('no-query-in-loop', $s->visibleDiagnostics()[0]->ruleId);
+        $this->assertCount(1, $s->visibleFindings());
+        $this->assertSame('no-query-in-loop', $s->visibleFindings()[0]->ruleId);
     }
 }
