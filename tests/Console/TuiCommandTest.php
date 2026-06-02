@@ -18,7 +18,8 @@ final class TuiCommandTest extends TestCase
         $this->base = sys_get_temp_dir() . '/ld-tui-' . uniqid();
         mkdir($this->base . '/shop/app', 0777, true);
         file_put_contents($this->base . '/shop/artisan', "#!/usr/bin/env php\n");
-        file_put_contents($this->base . '/shop/app/Pay.php', "<?php \$k = env('X');");
+        // Hallazgo de seguridad (env) + uno de performance (count() > 0).
+        file_put_contents($this->base . '/shop/app/Pay.php', "<?php\n\$k = env('X');\nif (\$u->posts()->count() > 0) {}\n");
     }
 
     protected function tearDown(): void
@@ -29,16 +30,15 @@ final class TuiCommandTest extends TestCase
     private function command(): TuiCommand
     {
         $command = new TuiCommand();
-        // Registrar en una Application le da el helper set (QuestionHelper), igual que en el bin.
         (new Application())->add($command);
 
         return $command;
     }
 
-    public function test_pick_project_audit_and_exit(): void
+    public function test_global_audit_then_exit(): void
     {
         $tester = new CommandTester($this->command());
-        $tester->setInputs(['shop', 'Auditar (estático)', 'Salir']);
+        $tester->setInputs(['shop', 'Auditoría global (estático)', 'Volver', 'Salir']);
 
         $exit = $tester->execute(['--base' => $this->base]);
 
@@ -46,6 +46,20 @@ final class TuiCommandTest extends TestCase
         $this->assertSame(0, $exit);
         $this->assertStringContainsString('Score:', $display);
         $this->assertStringContainsString('no-env-outside-config', $display);
+        $this->assertStringContainsString('prefer-exists-over-count', $display);
+    }
+
+    public function test_by_category_filters_results(): void
+    {
+        $tester = new CommandTester($this->command());
+        $tester->setInputs(['shop', 'Por categoría', 'security', 'Volver', 'Salir']);
+
+        $tester->execute(['--base' => $this->base]);
+
+        $display = $tester->getDisplay();
+        // Solo la categoría security: aparece env, no la de performance.
+        $this->assertStringContainsString('no-env-outside-config', $display);
+        $this->assertStringNotContainsString('prefer-exists-over-count', $display);
     }
 
     public function test_reports_when_no_projects(): void
