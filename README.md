@@ -111,13 +111,20 @@ Elige un proyecto:
   [2] Salir
  > 0
 Acción:
-  [0] Auditar (estático)
-  [1] Auditar (con --boot)
-  [2] Volver
- > 0
+  [0] Auditoría global (estático)
+  [1] Auditoría global (con --boot)
+  [2] Por categoría          # security · performance · eloquent · architecture
+  [3] Por regla concreta     # elige una regla del listado
+  [4] Volver
+ > 2
+Categoría:
+  [0] security
+  ...
 laravel-doctor — Score: 88/100 (Needs work)
 ...
 ```
+
+Eliges el **proyecto** y luego qué ejecutar: una **auditoría global** o **algo específico** (una categoría o una sola regla). El menú vuelve a abrirse tras cada auditoría.
 
 ## ⚙️ Configuración
 
