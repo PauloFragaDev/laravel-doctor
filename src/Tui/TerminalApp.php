@@ -28,7 +28,6 @@ use PhpTui\Tui\Text\Text;
 use PhpTui\Tui\Text\Title;
 use PhpTui\Tui\Widget\Borders;
 use PhpTui\Tui\Widget\Direction;
-use PhpTui\Tui\Widget\HorizontalAlignment;
 use PhpTui\Tui\Widget\Widget;
 
 /**
@@ -241,54 +240,13 @@ final class TerminalApp
     private function body(EnvironmentState $state, int $tick): Widget
     {
         if ($state->screen === EnvironmentState::SCREEN_HOME) {
-            // Logo grande animado a la izquierda, proyectos a la derecha.
-            return GridWidget::default()
-                ->direction(Direction::Horizontal)
-                ->constraints(Constraint::percentage(55), Constraint::percentage(45))
-                ->widgets($this->logoPane($tick), $this->projectsPane($state));
+            return $this->projectsPane($state);
         }
 
         return GridWidget::default()
             ->direction(Direction::Horizontal)
             ->constraints(Constraint::percentage(60), Constraint::percentage(40))
             ->widgets($this->findingsPane($state), $this->detailPane($state));
-    }
-
-    private function logoPane(int $tick): Widget
-    {
-        return $this->block()
-            ->titles(Title::fromString(' laravel-doctor '))
-            ->widget(
-                ParagraphWidget::fromText(Text::parse($this->bigLogo($tick)))
-                    ->alignment(HorizontalAlignment::Center),
-            );
-    }
-
-    /** Logo grande: campo de mini-dots con una onda diagonal de brillo (fade) que se desplaza. */
-    private function bigLogo(int $tick): string
-    {
-        $cols = 22;
-        $rows = 9;
-        $t = intdiv($tick, 2);
-        $lines = [''];
-        for ($r = 0; $r < $rows; $r++) {
-            $line = '';
-            for ($c = 0; $c < $cols; $c++) {
-                $level = (($c + $r) - $t) % 8;
-                if ($level < 0) {
-                    $level += 8;
-                }
-                $line .= match (true) {
-                    $level === 0 => '<options=bold;fg=white>● </>',
-                    $level === 1 => '<fg=cyan>● </>',
-                    $level === 2 => '<fg=gray>• </>',
-                    default => '<fg=darkgray>· </>',
-                };
-            }
-            $lines[] = $line;
-        }
-
-        return implode("\n", $lines);
     }
 
     private function projectsPane(EnvironmentState $state): Widget
