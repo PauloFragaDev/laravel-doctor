@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace LaravelDoctor\Console;
 
+use LaravelDoctor\Blade\BladeEngine;
+use LaravelDoctor\Blade\BladeRuleRegistry;
 use LaravelDoctor\Diagnostics\Pipeline;
 use LaravelDoctor\Diagnostics\Severity;
 use LaravelDoctor\Engine\Engine;
+use LaravelDoctor\Scanner\SourceType;
 use LaravelDoctor\Reporting\AgentReporter;
 use LaravelDoctor\Reporting\TtyReporter;
 use LaravelDoctor\Rules\RuleRegistry;
@@ -34,7 +37,14 @@ final class InspectCommand extends Command
         $path = (string) $input->getArgument('path');
 
         $files = (new FileScanner())->scan($path);
-        $diagnostics = (new Engine(RuleRegistry::all()))->inspect($files);
+
+        $phpFiles = array_values(array_filter($files, fn ($f) => $f->type === SourceType::Php));
+        $bladeFiles = array_values(array_filter($files, fn ($f) => $f->type === SourceType::Blade));
+
+        $diagnostics = array_merge(
+            (new Engine(RuleRegistry::all()))->inspect($phpFiles),
+            (new BladeEngine(BladeRuleRegistry::all()))->inspect($bladeFiles),
+        );
         $diagnostics = (new Pipeline())->process($diagnostics);
         $score = (new ScoreCalculator())->score($diagnostics);
 

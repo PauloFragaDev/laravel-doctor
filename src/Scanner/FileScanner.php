@@ -40,7 +40,8 @@ final class FileScanner
             if ($contents === false) {
                 continue;
             }
-            $files[] = new SourceFile($path, $contents);
+            $type = str_ends_with($path, '.blade.php') ? SourceType::Blade : SourceType::Php;
+            $files[] = new SourceFile($path, $contents, $type);
         }
 
         return $files;

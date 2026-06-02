@@ -21,6 +21,8 @@ final class FileScannerTest extends TestCase
         file_put_contents($this->root . '/app/notes.txt', "hola");
         file_put_contents($this->root . '/vendor/foo/Skip.php', "<?php\n");
         file_put_contents($this->root . '/tests/UserTest.php', "<?php\n");
+        mkdir($this->root . '/resources/views', 0777, true);
+        file_put_contents($this->root . '/resources/views/home.blade.php', "<div></div>\n");
     }
 
     protected function tearDown(): void
@@ -44,5 +46,22 @@ final class FileScannerTest extends TestCase
         $files = (new FileScanner())->scan($this->root);
         $user = array_values(array_filter($files, fn ($f) => str_ends_with($f->path, 'User.php')))[0];
         $this->assertStringContainsString('<?php', $user->contents);
+    }
+
+    public function test_collects_blade_files_tagged_as_blade(): void
+    {
+        $files = (new \LaravelDoctor\Scanner\FileScanner())->scan($this->root);
+        $blade = array_values(array_filter($files, fn ($f) => str_ends_with($f->path, '.blade.php')));
+
+        $this->assertCount(1, $blade);
+        $this->assertSame(\LaravelDoctor\Scanner\SourceType::Blade, $blade[0]->type);
+    }
+
+    public function test_plain_php_tagged_as_php(): void
+    {
+        $files = (new \LaravelDoctor\Scanner\FileScanner())->scan($this->root);
+        $user = array_values(array_filter($files, fn ($f) => str_ends_with($f->path, 'User.php')))[0];
+
+        $this->assertSame(\LaravelDoctor\Scanner\SourceType::Php, $user->type);
     }
 }
