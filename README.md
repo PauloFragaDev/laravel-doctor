@@ -1,1 +1,147 @@
-# laravel-doctor
+<div align="center">
+
+# 🩺 laravel-doctor
+
+### Tu agente escribe Laravel a medias. Esto lo diagnostica.
+
+**Auditor determinista para codebases Laravel** — seguridad, performance, Eloquent, arquitectura y Blade.
+Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcional) inspección en runtime.
+
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
+[![Tests](https://img.shields.io/badge/tests-109%20passing-22c55e?style=flat)](#desarrollo)
+[![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
+
+</div>
+
+---
+
+## ¿Qué hace?
+
+Escaneas tu proyecto y obtienes una **nota de 0 a 100** con los problemas priorizados, listos para que tú —o tu agente de IA— los arregléis:
+
+```text
+laravel-doctor — Score: 74/100 (Needs work)
+
+[ERROR]   app/Http/Controllers/PayController.php:12  no-env-outside-config
+    env() fuera de config/ devuelve null con la config cacheada en producción.
+    → Mueve el valor a un archivo de config/ y léelo con config().
+
+[WARNING] app/Models/User.php:8  no-mass-assignment-guarded-empty
+    $guarded = [] deja todos los campos asignables en masa.
+    → Define $fillable con los campos permitidos.
+
+[WARNING] resources/views/show.blade.php:3  no-unescaped-blade-output
+    Salida sin escapar de una variable ({!! !!}): XSS si el contenido viene del usuario.
+    → Usa {{ }} (escapa solo) o sanea el HTML antes.
+```
+
+Cada hallazgo trae **dónde** está, **por qué importa** (impacto real, no jerga de linter) y **cómo** arreglarlo.
+
+## ⚡ Instalación
+
+```bash
+composer require --dev laravel-doctor/laravel-doctor
+```
+
+## 🚀 Uso
+
+```bash
+# Auditar el proyecto actual
+./vendor/bin/laravel-doctor inspect
+
+# Auditar otra ruta
+./vendor/bin/laravel-doctor inspect ../mi-app
+
+# Salida JSON estable (para CI o para tu agente de IA)
+./vendor/bin/laravel-doctor inspect --json
+
+# Análisis en runtime: arranca la app para auditar rutas y config reales
+./vendor/bin/laravel-doctor inspect --boot
+
+# Terminal interactiva: elige proyecto y acción desde un menú
+./vendor/bin/laravel-doctor tui --base /var/www/html
+```
+
+`inspect` devuelve **exit code 1** si hay algún hallazgo de severidad *error* — perfecto para fallar un pipeline de CI.
+
+## 🔍 Qué detecta
+
+Dos modos que se complementan:
+
+- **Estático** (por defecto): analiza el AST de PHP (vía `nikic/php-parser`) y las plantillas Blade. Rápido, seguro, **no necesita DB ni `.env`** → ideal para CI.
+- **Runtime** (`--boot`): arranca tu app vía un comando artisan propio para auditar **rutas, middleware y config reales**. Si la app no puede arrancar, avisa y cae a estático.
+
+| Categoría | Reglas |
+|-----------|--------|
+| 🔒 **Seguridad** | `no-env-outside-config` · `no-mass-assignment-guarded-empty` · `no-raw-sql-interpolation` · `no-unescaped-blade-output` · `no-route-without-auth` ⚡ · `no-debug-in-production` ⚡ |
+| 🚀 **Performance / DB** | `prefer-exists-over-count` · `no-query-in-loop` · `no-all-then-filter` |
+| 🧬 **Eloquent** | `no-save-in-loop-without-transaction` · `no-missing-casts-for-json` ⚡ |
+| 🏗️ **Arquitectura** | `no-fat-controller-method` · `prefer-form-request-validation` · `no-business-logic-in-route-closure` |
+| 🎨 **Blade** | `no-unescaped-blade-output` · `no-logic-in-blade` |
+
+⚡ = requiere `--boot` (datos de runtime).
+
+## 🤖 Integración con agentes de IA
+
+El diferenciador: laravel-doctor no solo señala los problemas, **se los enseña a tu agente para que los arregle**.
+
+```bash
+./vendor/bin/laravel-doctor install
+```
+
+Instala una *skill* para Claude Code, Cursor, Codex y compañía. El bucle es:
+
+> **laravel-doctor encuentra → tu agente lee el JSON → arregla con la recomendación → re-corres → la nota sube.**
+
+El contrato JSON (`--json`) es estable: `{ score, label, diagnostics: [{ id, category, severity, file, line, message, recommendation }] }`.
+
+## 🖥️ Terminal interactiva (TUI)
+
+¿Varios proyectos en una máquina? `tui` los descubre y te deja auditarlos desde un menú, sin teclear rutas:
+
+```text
+Elige un proyecto:
+  [0] shop
+  [1] blog
+  [2] Salir
+ > 0
+Acción:
+  [0] Auditar (estático)
+  [1] Auditar (con --boot)
+  [2] Volver
+ > 0
+laravel-doctor — Score: 88/100 (Needs work)
+...
+```
+
+## 🧠 Filosofía
+
+- **Determinista**: mismas reglas, mismo resultado. Nada de "a veces lo pilla".
+- **Honesto con los falsos positivos**: las heurísticas que no pueden ser exactas sin runtime se marcan `warning`, no `error`; las que necesitan datos de la DB esperan a `--boot`.
+- **El impacto antes que la regla**: cada mensaje explica qué se rompe para tus usuarios.
+- **Funciona donde trabajas**: CLI, CI (JSON + exit codes), agentes de IA y TUI.
+
+## 🛠️ Desarrollo
+
+```bash
+composer install
+vendor/bin/phpunit        # 109 tests
+```
+
+Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre archivos) → motores (`Engine` AST · `BladeEngine` · `ManifestEngine` runtime) → `Pipeline` (dedup + orden) → `ScoreCalculator` → reporters (`Tty` · `Agent` JSON). Las reglas son clases declarativas; añadir una es una clase + su test de fixtures.
+
+## 🗺️ Roadmap
+
+- [x] Motor estático (PHP) + score + skill para agentes
+- [x] Reglas de seguridad, performance, Eloquent y arquitectura
+- [x] Soporte Blade
+- [x] Inspección en runtime (`--boot`): rutas, config, modelos
+- [x] Terminal interactiva (TUI)
+- [ ] `no-nullable-relation-access` y N+1 por observación real
+- [ ] GitHub Action con anotaciones en PR
+- [ ] Config `doctor.config.php` (activar/desactivar reglas, severidades, ignores)
+
+## Licencia
+
+MIT.
