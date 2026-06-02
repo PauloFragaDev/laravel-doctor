@@ -78,7 +78,7 @@ Dos modos que se complementan:
 | Categoría | Reglas |
 |-----------|--------|
 | 🔒 **Seguridad** | `no-env-outside-config` · `no-mass-assignment-guarded-empty` · `no-raw-sql-interpolation` · `no-unescaped-blade-output` · `no-route-without-auth` ⚡ · `no-debug-in-production` ⚡ |
-| 🚀 **Performance / DB** | `prefer-exists-over-count` · `no-query-in-loop` · `no-all-then-filter` |
+| 🚀 **Performance / DB** | `prefer-exists-over-count` · `no-query-in-loop` · `no-all-then-filter` · `no-unindexed-foreign-key` ⚡ |
 | 🧬 **Eloquent** | `no-save-in-loop-without-transaction` · `no-missing-casts-for-json` ⚡ |
 | 🏗️ **Arquitectura** | `no-fat-controller-method` · `prefer-form-request-validation` · `no-business-logic-in-route-closure` |
 | 🎨 **Blade** | `no-unescaped-blade-output` · `no-logic-in-blade` |
@@ -185,7 +185,12 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] Terminal interactiva (TUI)
 - [x] Config `doctor.config.php` (activar/desactivar reglas, severidades, ignores)
 - [x] GitHub Action con anotaciones en PR
-- [ ] `no-nullable-relation-access` y N+1 por observación real
+- [x] Reglas runtime dirigidas por el esquema real (FK sin índice)
+- [ ] Más reglas dirigidas por esquema (índices compuestos, columnas sin usar)
+
+> Nota de diseño: el N+1 "por observación real" (ejecutar la app y contar queries) queda
+> deliberadamente fuera: es no-determinista y contradice el principio de la herramienta.
+> Preferimos reglas dirigidas por el esquema/manifiesto reales, precisas y reproducibles.
 
 ## Licencia
 

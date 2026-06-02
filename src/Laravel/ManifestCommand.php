@@ -86,11 +86,18 @@ final class ManifestCommand extends Command
                 foreach (Schema::getColumns($table) as $column) {
                     $columns[(string) $column['name']] = (string) $column['type_name'];
                 }
+                $indexes = [];
+                foreach (Schema::getIndexes($table) as $index) {
+                    foreach ((array) ($index['columns'] ?? []) as $col) {
+                        $indexes[] = (string) $col;
+                    }
+                }
                 $models[] = [
                     'class' => $class,
                     'table' => $table,
                     'casts' => array_keys($instance->getCasts()),
                     'columns' => $columns,
+                    'indexes' => array_values(array_unique($indexes)),
                 ];
             } catch (\Throwable) {
                 // Sin DB o modelo no instanciable: se omite (las reglas de modelo no dispararán).

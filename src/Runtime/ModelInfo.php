@@ -9,12 +9,14 @@ final readonly class ModelInfo
     /**
      * @param string[] $casts Claves de atributos con cast declarado en el modelo.
      * @param array<string,string> $columns Columnas de la DB: nombre => tipo.
+     * @param string[] $indexes Nombres de columna cubiertos por algún índice de la tabla.
      */
     public function __construct(
         public string $class,
         public string $table,
         public array $casts,
         public array $columns,
+        public array $indexes = [],
     ) {
     }
 }

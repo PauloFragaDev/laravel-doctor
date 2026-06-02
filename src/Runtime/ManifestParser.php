@@ -46,6 +46,7 @@ final class ManifestParser
                 table: (string) ($model['table'] ?? ''),
                 casts: array_map('strval', (array) ($model['casts'] ?? [])),
                 columns: $columns,
+                indexes: array_values(array_map('strval', (array) ($model['indexes'] ?? []))),
             );
         }
 

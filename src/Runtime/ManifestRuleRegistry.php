@@ -7,6 +7,7 @@ namespace LaravelDoctor\Runtime;
 use LaravelDoctor\Rules\Runtime\NoDebugInProduction;
 use LaravelDoctor\Rules\Runtime\NoMissingCastsForJson;
 use LaravelDoctor\Rules\Runtime\NoRouteWithoutAuth;
+use LaravelDoctor\Rules\Runtime\NoUnindexedForeignKey;
 
 final class ManifestRuleRegistry
 {
@@ -19,6 +20,7 @@ final class ManifestRuleRegistry
             new NoRouteWithoutAuth(),
             new NoDebugInProduction(),
             new NoMissingCastsForJson(),
+            new NoUnindexedForeignKey(),
         ];
     }
 }
