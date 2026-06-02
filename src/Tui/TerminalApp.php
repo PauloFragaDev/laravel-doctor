@@ -79,7 +79,8 @@ final class TerminalApp
     {
         $tick = 0;
         while (true) {
-            $display->draw($this->layout($state, $tick++));
+            $width = max(20, $display->viewportArea()->width);
+            $display->draw($this->layout($state, $tick++, $width));
 
             while (null !== $event = $terminal->events()->next()) {
                 if ($event instanceof CharKeyEvent && $event->modifiers === KeyModifiers::NONE) {
@@ -91,7 +92,7 @@ final class TerminalApp
                 }
             }
 
-            usleep(20_000);
+            usleep(60_000);
         }
     }
 
@@ -158,12 +159,12 @@ final class TerminalApp
         $state->openResults($name, $result->diagnostics, $result->score);
     }
 
-    private function layout(EnvironmentState $state, int $tick): Widget
+    private function layout(EnvironmentState $state, int $tick, int $width): Widget
     {
         $grid = GridWidget::default()
             ->direction(Direction::Vertical)
             ->constraints(Constraint::length(3), Constraint::length(3), Constraint::min(1), Constraint::length(3))
-            ->widgets($this->header($state, $tick), $this->bar($state), $this->body($state, $tick), $this->footer($state));
+            ->widgets($this->header($state, $tick, $width), $this->bar($state), $this->body($state, $tick), $this->footer($state));
 
         // Bloque raíz sin bordes con fondo negro: fuerza el negro en toda la pantalla.
         return BlockWidget::default()
@@ -171,7 +172,7 @@ final class TerminalApp
             ->widget($grid);
     }
 
-    private function header(EnvironmentState $state, int $tick): Widget
+    private function header(EnvironmentState $state, int $tick, int $width): Widget
     {
         if ($state->screen === EnvironmentState::SCREEN_RESULTS && $state->score !== null) {
             $label = sprintf(
@@ -185,24 +186,30 @@ final class TerminalApp
             $label = '🩺 laravel-doctor · elige un proyecto';
         }
 
+        // El logo llena desde el final del título hasta el borde derecho.
+        $dots = max(10, $width - mb_strlen($label) - 8);
+
         return $this->block()->widget(
-            ParagraphWidget::fromText(Text::parse(' ' . $label . '   ' . $this->logo($tick) . ' ')),
+            ParagraphWidget::fromText(Text::parse(' ' . $label . '   ' . $this->logo($tick, $dots) . ' ')),
         );
     }
 
-    /** Logo animado: mini-dots con una onda de brillo (fade) que va y viene. */
-    private function logo(int $tick): string
+    /**
+     * Logo animado: una fila larga de mini-dots que llena el ancho hasta el final, con una
+     * banda de brillo (fade) que barre de lado a lado. Se recorta al ancho del terminal.
+     */
+    private function logo(int $tick, int $n): string
     {
-        $n = 14;
-        $t = intdiv($tick, 3);
-        $pos = abs(($t % (2 * ($n - 1))) - ($n - 1)); // ping-pong 0..n-1..0
+        $span = max(1, $n - 1);  // la banda barre exactamente el ancho visible de dots
+        $t = intdiv($tick, 2);
+        $pos = abs(($t % (2 * $span)) - $span);
         $out = '';
         for ($i = 0; $i < $n; $i++) {
             $d = abs($i - $pos);
             $out .= match (true) {
                 $d === 0 => '<options=bold;fg=white>●</>',
-                $d === 1 => '<fg=cyan>●</>',
-                $d === 2 => '<fg=gray>•</>',
+                $d <= 2 => '<fg=cyan>●</>',
+                $d <= 5 => '<fg=gray>•</>',
                 default => '<fg=darkgray>·</>',
             };
         }
