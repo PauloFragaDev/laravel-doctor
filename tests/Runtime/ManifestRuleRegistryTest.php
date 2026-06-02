@@ -20,5 +20,6 @@ final class ManifestRuleRegistryTest extends TestCase
         $this->assertContains('no-route-without-auth', $ids);
         $this->assertContains('no-debug-in-production', $ids);
         $this->assertContains('no-missing-casts-for-json', $ids);
+        $this->assertContains('no-unindexed-foreign-key', $ids);
     }
 }
