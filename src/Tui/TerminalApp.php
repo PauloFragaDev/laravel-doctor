@@ -77,8 +77,9 @@ final class TerminalApp
 
     private function loop(Terminal $terminal, Display $display, EnvironmentState $state): void
     {
+        $tick = 0;
         while (true) {
-            $display->draw($this->layout($state));
+            $display->draw($this->layout($state, $tick++));
 
             while (null !== $event = $terminal->events()->next()) {
                 if ($event instanceof CharKeyEvent && $event->modifiers === KeyModifiers::NONE) {
@@ -157,29 +158,59 @@ final class TerminalApp
         $state->openResults($name, $result->diagnostics, $result->score);
     }
 
-    private function layout(EnvironmentState $state): Widget
+    private function layout(EnvironmentState $state, int $tick): Widget
     {
         return GridWidget::default()
             ->direction(Direction::Vertical)
             ->constraints(Constraint::length(3), Constraint::length(3), Constraint::min(1), Constraint::length(3))
-            ->widgets($this->header($state), $this->bar($state), $this->body($state), $this->footer($state));
+            ->widgets($this->header($state, $tick), $this->bar($state), $this->body($state), $this->footer($state));
     }
 
-    private function header(EnvironmentState $state): Widget
+    private function header(EnvironmentState $state, int $tick): Widget
     {
         if ($state->screen === EnvironmentState::SCREEN_RESULTS && $state->score !== null) {
-            $title = sprintf(
-                ' 🩺 %s · Score %d/100 (%s)%s ',
+            $label = sprintf(
+                '🩺 %s · Score %d/100 (%s)%s',
                 $state->loadedProjectName,
                 $state->score->score,
                 $state->score->label,
                 $this->boot ? ' · runtime' : '',
             );
         } else {
-            $title = ' 🩺 laravel-doctor · elige un proyecto ';
+            $label = '🩺 laravel-doctor · elige un proyecto';
         }
 
-        return BlockWidget::default()->borders(Borders::ALL)->titles(Title::fromString($title));
+        return $this->block()->widget(
+            ParagraphWidget::fromText(Text::parse(' ' . $label . '   ' . $this->logo($tick) . ' ')),
+        );
+    }
+
+    /** Logo animado: mini-dots con una onda de brillo (fade) que va y viene. */
+    private function logo(int $tick): string
+    {
+        $n = 14;
+        $t = intdiv($tick, 3);
+        $pos = abs(($t % (2 * ($n - 1))) - ($n - 1)); // ping-pong 0..n-1..0
+        $out = '';
+        for ($i = 0; $i < $n; $i++) {
+            $d = abs($i - $pos);
+            $out .= match (true) {
+                $d === 0 => '<options=bold;fg=white>●</>',
+                $d === 1 => '<fg=cyan>●</>',
+                $d === 2 => '<fg=gray>•</>',
+                default => '<fg=darkgray>·</>',
+            };
+        }
+
+        return $out;
+    }
+
+    /** Bloque base: bordes y fondo negro (personalización). */
+    private function block(): BlockWidget
+    {
+        return BlockWidget::default()
+            ->borders(Borders::ALL)
+            ->style(Style::default()->onBlack());
     }
 
     private function bar(EnvironmentState $state): Widget
@@ -198,9 +229,7 @@ final class TerminalApp
             $content = ' ' . $search . ' ';
         }
 
-        return BlockWidget::default()
-            ->borders(Borders::ALL)
-            ->widget(ParagraphWidget::fromText(Text::parse($content)));
+        return $this->block()->widget(ParagraphWidget::fromText(Text::parse($content)));
     }
 
     private function body(EnvironmentState $state): Widget
@@ -223,8 +252,7 @@ final class TerminalApp
             $projects,
         );
 
-        return BlockWidget::default()
-            ->borders(Borders::ALL)
+        return $this->block()
             ->titles(Title::fromString(sprintf(' Proyectos (%d) ', count($projects))))
             ->widget(
                 ListWidget::default()
@@ -259,8 +287,7 @@ final class TerminalApp
 
         $count = count($state->visibleFindings());
 
-        return BlockWidget::default()
-            ->borders(Borders::ALL)
+        return $this->block()
             ->titles(Title::fromString(sprintf(' Hallazgos (%d) ', $count)))
             ->widget(
                 ListWidget::default()
@@ -285,8 +312,7 @@ final class TerminalApp
                 $this->relative($d->file) . ($d->line > 0 ? ':' . $d->line : ''),
             );
 
-        return BlockWidget::default()
-            ->borders(Borders::ALL)
+        return $this->block()
             ->titles(Title::fromString(' Detalle '))
             ->widget(ParagraphWidget::fromText(Text::parse($text)));
     }
@@ -301,7 +327,7 @@ final class TerminalApp
             $title = ' ↑↓ mover · Tab/c categoría · / buscar · b runtime · Esc volver · q salir ';
         }
 
-        return BlockWidget::default()->borders(Borders::ALL)->titles(Title::fromString($title));
+        return $this->block()->titles(Title::fromString($title));
     }
 
     private function relative(string $file): string
