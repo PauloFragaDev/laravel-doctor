@@ -15,14 +15,24 @@ final class RuleRegistryTest extends TestCase
         $rules = RuleRegistry::all();
 
         $this->assertContainsOnlyInstancesOf(Rule::class, $rules);
-        $this->assertGreaterThanOrEqual(4, count($rules));
+        $this->assertCount(10, $rules);
 
         $ids = array_map(fn (Rule $r) => $r->id(), $rules);
         $this->assertSame($ids, array_unique($ids), 'Los ids de regla deben ser únicos');
 
-        $this->assertContains('no-env-outside-config', $ids);
-        $this->assertContains('prefer-exists-over-count', $ids);
-        $this->assertContains('no-save-in-loop-without-transaction', $ids);
-        $this->assertContains('prefer-form-request-validation', $ids);
+        foreach ([
+            'no-env-outside-config',
+            'prefer-exists-over-count',
+            'no-save-in-loop-without-transaction',
+            'prefer-form-request-validation',
+            'no-mass-assignment-guarded-empty',
+            'no-raw-sql-interpolation',
+            'no-query-in-loop',
+            'no-all-then-filter',
+            'no-fat-controller-method',
+            'no-business-logic-in-route-closure',
+        ] as $expected) {
+            $this->assertContains($expected, $ids);
+        }
     }
 }
