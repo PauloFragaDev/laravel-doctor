@@ -6,6 +6,8 @@ namespace LaravelDoctor\Analysis;
 
 use LaravelDoctor\Blade\BladeEngine;
 use LaravelDoctor\Blade\BladeRuleRegistry;
+use LaravelDoctor\Config\ConfigApplier;
+use LaravelDoctor\Config\ConfigLoader;
 use LaravelDoctor\Diagnostics\Pipeline;
 use LaravelDoctor\Engine\Engine;
 use LaravelDoctor\Rules\RuleRegistry;
@@ -53,6 +55,9 @@ final class Inspector
                 $bootFailed = true;
             }
         }
+
+        $config = (new ConfigLoader())->load($path);
+        $diagnostics = (new ConfigApplier())->apply($diagnostics, $config);
 
         $diagnostics = (new Pipeline())->process($diagnostics);
         $score = (new ScoreCalculator())->score($diagnostics);
