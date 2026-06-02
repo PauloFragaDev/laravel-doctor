@@ -18,8 +18,7 @@ final class TuiCommandTest extends TestCase
         $this->base = sys_get_temp_dir() . '/ld-tui-' . uniqid();
         mkdir($this->base . '/shop/app', 0777, true);
         file_put_contents($this->base . '/shop/artisan', "#!/usr/bin/env php\n");
-        // Hallazgo de seguridad (env) + uno de performance (count() > 0).
-        file_put_contents($this->base . '/shop/app/Pay.php', "<?php\n\$k = env('X');\nif (\$u->posts()->count() > 0) {}\n");
+        file_put_contents($this->base . '/shop/app/Pay.php', "<?php\n\$k = env('X');\n");
     }
 
     protected function tearDown(): void
@@ -35,31 +34,14 @@ final class TuiCommandTest extends TestCase
         return $command;
     }
 
-    public function test_global_audit_then_exit(): void
+    public function test_requires_interactive_terminal(): void
     {
+        // Forzamos no interactivo para no lanzar el bucle full-screen (que leería de STDIN).
         $tester = new CommandTester($this->command());
-        $tester->setInputs(['shop', 'Auditoría global (estático)', 'Volver', 'Salir']);
+        $exit = $tester->execute(['--base' => $this->base], ['interactive' => false]);
 
-        $exit = $tester->execute(['--base' => $this->base]);
-
-        $display = $tester->getDisplay();
         $this->assertSame(0, $exit);
-        $this->assertStringContainsString('Score:', $display);
-        $this->assertStringContainsString('no-env-outside-config', $display);
-        $this->assertStringContainsString('prefer-exists-over-count', $display);
-    }
-
-    public function test_by_category_filters_results(): void
-    {
-        $tester = new CommandTester($this->command());
-        $tester->setInputs(['shop', 'Por categoría', 'security', 'Volver', 'Salir']);
-
-        $tester->execute(['--base' => $this->base]);
-
-        $display = $tester->getDisplay();
-        // Solo la categoría security: aparece env, no la de performance.
-        $this->assertStringContainsString('no-env-outside-config', $display);
-        $this->assertStringNotContainsString('prefer-exists-over-count', $display);
+        $this->assertStringContainsString('requiere una terminal interactiva', $tester->getDisplay());
     }
 
     public function test_reports_when_no_projects(): void
@@ -68,7 +50,7 @@ final class TuiCommandTest extends TestCase
         mkdir($empty);
         $tester = new CommandTester($this->command());
 
-        $exit = $tester->execute(['--base' => $empty]);
+        $exit = $tester->execute(['--base' => $empty], ['interactive' => false]);
 
         $this->assertSame(0, $exit);
         $this->assertStringContainsString('No se encontraron proyectos', $tester->getDisplay());

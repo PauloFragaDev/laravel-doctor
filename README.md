@@ -119,29 +119,27 @@ El contrato JSON (`--json`) es estable: `{ score, label, diagnostics: [{ id, cat
 
 ## 🖥️ Terminal interactiva (TUI)
 
-¿Varios proyectos en una máquina? `tui` los descubre y te deja auditarlos desde un menú, sin teclear rutas:
+`laravel-doctor` sin argumentos (o `laravel-doctor tui`) abre una **terminal a pantalla
+completa de dos paneles** — proyectos a la izquierda, hallazgos a la derecha — que navegas con
+las flechas, sin teclear rutas ni números:
 
 ```text
-Elige un proyecto:
-  [0] shop
-  [1] blog
-  [2] Salir
- > 0
-Acción:
-  [0] Auditoría global (estático)
-  [1] Auditoría global (con --boot)
-  [2] Por categoría          # security · performance · eloquent · architecture
-  [3] Por regla concreta     # elige una regla del listado
-  [4] Volver
- > 2
-Categoría:
-  [0] security
-  ...
-laravel-doctor — Score: 88/100 (Needs work)
-...
+laravel-doctor · shop · Score 74/100 (Needs work) · ●12 ●5 ●3
+──────────────────────────────────────────────────────────────
+› shop          │ › ERROR   no-env-outside-config  app/Pay.php:12
+  blog          │   ERROR   no-raw-sql-interpolation app/Repo.php:8
+  api           │   WARN    no-query-in-loop       app/List.php:30
+                │   WARN    no-all-then-filter     app/User.php:5
+──────────────────────────────────────────────────────────────
+↑↓ mover · Enter detalle · c categoría [all] · / buscar · Esc volver · q salir
 ```
 
-Eliges el **proyecto** y luego qué ejecutar: una **auditoría global** o **algo específico** (una categoría o una sola regla). El menú vuelve a abrirse tras cada auditoría.
+- **↑↓** mueve, **Enter** abre el proyecto / despliega el detalle del hallazgo (mensaje +
+  recomendación), **c** cicla la categoría, **/** busca en vivo, **b** activa/desactiva el
+  análisis runtime (`--boot`), **Esc** vuelve, **q** sale.
+- Todo en una sola pantalla que se actualiza al vuelo.
+
+Requiere una terminal interactiva (TTY); en CI/pipes usa `inspect`.
 
 ## ⚙️ Configuración
 
