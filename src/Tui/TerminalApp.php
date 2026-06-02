@@ -231,23 +231,36 @@ final class TerminalApp
             });
     }
 
-    /** Altura (0..100) de la traza ECG para una posición; un latido se repite cada L unidades. */
+    /**
+     * Altura (0..100) de la traza ECG. Cada latido (cada periodo L) toma una forma
+     * pseudo-aleatoria pero estable (semilla = índice del latido), con baseline plana entre
+     * medias para que salgan espaciados.
+     */
     private function ecgY(float $globalX): float
     {
-        $beatLength = 26.0;
+        $beatLength = 38.0;   // periodo largo → margen entre latidos
         $base = 42.0;
-        $p = fmod(fmod($globalX, $beatLength) + $beatLength, $beatLength) / $beatLength;
 
-        // Puntos de control de un latido (fracción de fase => desviación sobre la baseline).
+        $idx = (int) floor($globalX / $beatLength);
+        $p = (fmod(fmod($globalX, $beatLength) + $beatLength, $beatLength)) / $beatLength;
+
+        // Parámetros pseudo-aleatorios por latido (deterministas).
+        $r = 30.0 + 26.0 * $this->ecgHash($idx, 1);   // altura del pico R
+        $pw = 5.0 + 9.0 * $this->ecgHash($idx, 2);     // onda P
+        $tw = 9.0 + 12.0 * $this->ecgHash($idx, 3);    // onda T
+        $c = 0.45 + 0.10 * $this->ecgHash($idx, 4);    // posición del QRS dentro del latido
+
+        // Puntos de control (fracción de fase => desviación sobre la baseline). Fuera del
+        // tramo activo es baseline plana (margen).
         $cp = [
-            [0.00, 0.0], [0.30, 0.0],
-            [0.345, 12.0], [0.39, 0.0],   // onda P
-            [0.45, 0.0],
-            [0.475, -12.0],               // Q
-            [0.50, 48.0],                 // R (pico)
-            [0.525, -20.0],               // S
-            [0.55, 0.0], [0.66, 0.0],
-            [0.72, 18.0], [0.80, 0.0],    // onda T
+            [0.00, 0.0], [$c - 0.18, 0.0],
+            [$c - 0.14, $pw], [$c - 0.10, 0.0],          // onda P
+            [$c - 0.05, 0.0],
+            [$c - 0.025, -0.30 * $r],                    // Q
+            [$c, $r],                                    // R (pico)
+            [$c + 0.025, -0.40 * $r],                    // S
+            [$c + 0.05, 0.0],
+            [$c + 0.14, $tw], [$c + 0.22, 0.0],          // onda T
             [1.00, 0.0],
         ];
 
@@ -261,6 +274,14 @@ final class TerminalApp
         }
 
         return $base;
+    }
+
+    /** Pseudo-aleatorio determinista en [0,1) a partir de (índice de latido, sal). */
+    private function ecgHash(int $i, int $salt): float
+    {
+        $v = sin($i * 12.9898 + $salt * 78.233) * 43758.5453;
+
+        return $v - floor($v);
     }
 
     /** Bloque base: bordes y fondo negro (personalización). */
