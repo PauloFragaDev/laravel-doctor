@@ -45,23 +45,34 @@ Cada hallazgo trae **dónde** está, **por qué importa** (impacto real, no jerg
 git clone https://github.com/PauloFragaDev/laravel-doctor
 cd laravel-doctor && composer install
 
+# 1) Crea el comando global (una sola vez, sin sudo):
+ln -s "$(pwd)/bin/laravel-doctor" ~/.local/bin/laravel-doctor
+
+# 2) Úsalo desde la carpeta que contiene tus apps:
+cd /var/www/html
 laravel-doctor          # abre el menú: elige proyecto y qué auditar
 ```
 
-> `laravel-doctor` (sin argumentos) abre la **terminal interactiva** usando el directorio
-> actual como base. Ejecútalo desde la carpeta que contiene tus apps (p. ej. `/var/www/html`)
-> o desde dentro de una app Laravel concreta — el menú la detecta sola.
+> El paso 1 enlaza el binario en `~/.local/bin` (que suele estar en el PATH). Si tras hacerlo
+> el comando no aparece, abre una terminal nueva o ejecuta `hash -r`. Si `~/.local/bin` no
+> existe o no está en tu PATH, créalo/añádelo:
+> `mkdir -p ~/.local/bin && export PATH="$HOME/.local/bin:$PATH"`.
 
-**Para tener el comando `laravel-doctor` disponible en cualquier sitio**, instálalo global con
-Composer (una sola vez):
+**Sin crear el comando global**, dentro del repo siempre puedes usar el binario por su ruta:
 
 ```bash
-composer global require laravel-doctor/laravel-doctor
-# asegúrate de tener el bin global de composer en el PATH:
-#   export PATH="$HOME/.config/composer/vendor/bin:$PATH"
+./bin/laravel-doctor                       # menú, usando el directorio actual como base
+./bin/laravel-doctor tui --base /var/www/html
 ```
 
-(Mientras no esté en Packagist, dentro del repo basta `./bin/laravel-doctor`.)
+> `laravel-doctor` sin argumentos abre la **terminal interactiva** usando el directorio actual
+> como base. Ejecútalo desde la carpeta que contiene tus apps (p. ej. `/var/www/html`) o desde
+> dentro de una app Laravel concreta — el menú la detecta sola.
+>
+> Ojo: `composer install` en este repo **no** crea por sí solo un comando `laravel-doctor`
+> (Composer solo enlaza binarios de las *dependencias*, no del propio paquete). Por eso el
+> paso 1. Cuando el paquete esté en **Packagist**, bastará `composer global require
+> laravel-doctor/laravel-doctor`.
 
 ## 🚀 Otros usos
 
