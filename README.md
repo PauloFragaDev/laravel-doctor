@@ -39,33 +39,50 @@ laravel-doctor — Score: 74/100 (Needs work)
 
 Cada hallazgo trae **dónde** está, **por qué importa** (impacto real, no jerga de linter) y **cómo** arreglarlo.
 
-## ⚡ Instalación
+## ⚡ Inicio rápido
 
 ```bash
-composer require --dev laravel-doctor/laravel-doctor
+git clone https://github.com/PauloFragaDev/laravel-doctor
+cd laravel-doctor && composer install
+
+laravel-doctor          # abre el menú: elige proyecto y qué auditar
 ```
 
-## 🚀 Uso
+> `laravel-doctor` (sin argumentos) abre la **terminal interactiva** usando el directorio
+> actual como base. Ejecútalo desde la carpeta que contiene tus apps (p. ej. `/var/www/html`)
+> o desde dentro de una app Laravel concreta — el menú la detecta sola.
+
+**Para tener el comando `laravel-doctor` disponible en cualquier sitio**, instálalo global con
+Composer (una sola vez):
 
 ```bash
-# Auditar el proyecto actual
-./vendor/bin/laravel-doctor inspect
+composer global require laravel-doctor/laravel-doctor
+# asegúrate de tener el bin global de composer en el PATH:
+#   export PATH="$HOME/.config/composer/vendor/bin:$PATH"
+```
 
-# Auditar otra ruta
-./vendor/bin/laravel-doctor inspect ../mi-app
+(Mientras no esté en Packagist, dentro del repo basta `./bin/laravel-doctor`.)
+
+## 🚀 Otros usos
+
+```bash
+# Auditar una ruta directamente (sin menú)
+laravel-doctor inspect /var/www/html/mi-app
 
 # Salida JSON estable (para CI o para tu agente de IA)
-./vendor/bin/laravel-doctor inspect --json
+laravel-doctor inspect --json
 
 # Análisis en runtime: arranca la app para auditar rutas y config reales
-./vendor/bin/laravel-doctor inspect --boot
-
-# Terminal interactiva: elige proyecto y acción desde un menú
-./vendor/bin/laravel-doctor tui --base /var/www/html
+laravel-doctor inspect --boot
 
 # Anotaciones inline para GitHub Actions
-./vendor/bin/laravel-doctor inspect --github
+laravel-doctor inspect --github
+
+# Menú apuntando a otra carpeta de proyectos
+laravel-doctor tui --base /ruta/a/proyectos
 ```
+
+Para usarlo **dentro de una app** (habilita `--boot`): `composer require --dev laravel-doctor/laravel-doctor`.
 
 `inspect` devuelve **exit code 1** si hay algún hallazgo de severidad *error* — perfecto para fallar un pipeline de CI.
 

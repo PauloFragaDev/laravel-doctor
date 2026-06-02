@@ -36,6 +36,19 @@ final class ProjectDiscoveryTest extends TestCase
         $this->assertStringEndsWith('/blog', $projects[0]->path);
     }
 
+    public function test_includes_base_dir_itself_when_it_is_a_laravel_app(): void
+    {
+        $app = sys_get_temp_dir() . '/ld-disc-app-' . uniqid();
+        mkdir($app, 0777, true);
+        file_put_contents($app . '/artisan', "#!/usr/bin/env php\n");
+
+        $projects = (new ProjectDiscovery())->discover($app);
+
+        $this->assertCount(1, $projects);
+        $this->assertSame($app, $projects[0]->path);
+        exec('rm -rf ' . escapeshellarg($app));
+    }
+
     public function test_empty_when_no_projects(): void
     {
         $empty = sys_get_temp_dir() . '/ld-disc-empty-' . uniqid();
