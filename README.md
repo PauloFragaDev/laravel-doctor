@@ -61,6 +61,9 @@ composer require --dev laravel-doctor/laravel-doctor
 
 # Terminal interactiva: elige proyecto y acción desde un menú
 ./vendor/bin/laravel-doctor tui --base /var/www/html
+
+# Anotaciones inline para GitHub Actions
+./vendor/bin/laravel-doctor inspect --github
 ```
 
 `inspect` devuelve **exit code 1** si hay algún hallazgo de severidad *error* — perfecto para fallar un pipeline de CI.
@@ -135,6 +138,28 @@ return [
 
 Sin archivo de config, el comportamiento es el de por defecto.
 
+## 🔁 CI / GitHub Action
+
+Hay una action reutilizable (`action.yml`) que audita cada PR y deja **anotaciones inline** donde el revisor ya mira:
+
+```yaml
+name: laravel-doctor
+on: [pull_request]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: PauloFragaDev/laravel-doctor@main
+        # with:
+        #   boot: 'true'   # análisis en runtime
+```
+
+El job falla (exit 1) si hay hallazgos de severidad *error*. También puedes invocarlo directo con `inspect --github` en cualquier CI.
+
 ## 🧠 Filosofía
 
 - **Determinista**: mismas reglas, mismo resultado. Nada de "a veces lo pilla".
@@ -158,9 +183,9 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] Soporte Blade
 - [x] Inspección en runtime (`--boot`): rutas, config, modelos
 - [x] Terminal interactiva (TUI)
-- [ ] `no-nullable-relation-access` y N+1 por observación real
 - [x] Config `doctor.config.php` (activar/desactivar reglas, severidades, ignores)
-- [ ] GitHub Action con anotaciones en PR
+- [x] GitHub Action con anotaciones en PR
+- [ ] `no-nullable-relation-access` y N+1 por observación real
 
 ## Licencia
 

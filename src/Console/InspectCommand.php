@@ -6,6 +6,7 @@ namespace LaravelDoctor\Console;
 
 use LaravelDoctor\Analysis\Inspector;
 use LaravelDoctor\Reporting\AgentReporter;
+use LaravelDoctor\Reporting\GithubReporter;
 use LaravelDoctor\Reporting\TtyReporter;
 use LaravelDoctor\Runtime\ManifestExtractor;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -31,6 +32,7 @@ final class InspectCommand extends Command
         $this
             ->addArgument('path', InputArgument::OPTIONAL, 'Directorio a analizar', getcwd())
             ->addOption('json', null, InputOption::VALUE_NONE, 'Emite el reporte como JSON (para agentes)')
+            ->addOption('github', null, InputOption::VALUE_NONE, 'Emite anotaciones de GitHub Actions (inline en el PR)')
             ->addOption('boot', null, InputOption::VALUE_NONE, 'Arranca la app (php artisan) para analizar rutas/config de runtime');
     }
 
@@ -46,9 +48,11 @@ final class InspectCommand extends Command
             $output->writeln('Aviso: no se pudo bootear la app (--boot); analizando solo estático.');
         }
 
-        $report = $isJson
-            ? (new AgentReporter())->report($result->score, $result->diagnostics)
-            : (new TtyReporter())->report($result->score, $result->diagnostics);
+        $report = match (true) {
+            (bool) $input->getOption('github') => (new GithubReporter())->report($result->score, $result->diagnostics),
+            $isJson => (new AgentReporter())->report($result->score, $result->diagnostics),
+            default => (new TtyReporter())->report($result->score, $result->diagnostics),
+        };
 
         $output->write($report);
 

@@ -1,0 +1,38 @@
+name: 'laravel-doctor'
+description: 'Audita tu codebase Laravel y deja anotaciones inline en el PR.'
+branding:
+  icon: 'activity'
+  color: 'red'
+
+inputs:
+  path:
+    description: 'Directorio a analizar'
+    required: false
+    default: '.'
+  php-version:
+    description: 'Versión de PHP'
+    required: false
+    default: '8.3'
+  boot:
+    description: 'Pasar --boot para análisis en runtime (requiere que la app pueda bootear)'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}
+
+    - name: Install dependencies
+      shell: bash
+      run: composer install --no-interaction --prefer-dist --no-progress
+
+    - name: Run laravel-doctor
+      shell: bash
+      run: |
+        BOOT_FLAG=""
+        if [ "${{ inputs.boot }}" = "true" ]; then BOOT_FLAG="--boot"; fi
+        ./vendor/bin/laravel-doctor inspect "${{ inputs.path }}" --github $BOOT_FLAG
