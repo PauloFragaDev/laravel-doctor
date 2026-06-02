@@ -18,5 +18,7 @@ final class ManifestRuleRegistryTest extends TestCase
         $ids = array_map(fn (ManifestRule $r) => $r->id(), $rules);
         $this->assertSame($ids, array_unique($ids));
         $this->assertContains('no-route-without-auth', $ids);
+        $this->assertContains('no-debug-in-production', $ids);
+        $this->assertContains('no-missing-casts-for-json', $ids);
     }
 }
