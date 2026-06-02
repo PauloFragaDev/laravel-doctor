@@ -115,6 +115,26 @@ laravel-doctor — Score: 88/100 (Needs work)
 ...
 ```
 
+## ⚙️ Configuración
+
+Opcional. Crea un `doctor.config.php` (o `doctor.config.json`) en la raíz para desactivar reglas, ajustar severidades o excluir rutas:
+
+```php
+<?php
+
+return [
+    'rules' => [
+        'no-fat-controller-method' => false,   // desactivar
+        'no-query-in-loop' => 'error',         // forzar severidad (info|warning|error)
+    ],
+    'exclude' => [
+        'app/Legacy/*',                         // ignorar rutas (glob)
+    ],
+];
+```
+
+Sin archivo de config, el comportamiento es el de por defecto.
+
 ## 🧠 Filosofía
 
 - **Determinista**: mismas reglas, mismo resultado. Nada de "a veces lo pilla".
@@ -139,8 +159,8 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] Inspección en runtime (`--boot`): rutas, config, modelos
 - [x] Terminal interactiva (TUI)
 - [ ] `no-nullable-relation-access` y N+1 por observación real
+- [x] Config `doctor.config.php` (activar/desactivar reglas, severidades, ignores)
 - [ ] GitHub Action con anotaciones en PR
-- [ ] Config `doctor.config.php` (activar/desactivar reglas, severidades, ignores)
 
 ## Licencia
 
