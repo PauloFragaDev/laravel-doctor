@@ -117,6 +117,19 @@ Instala una *skill* para Claude Code, Cursor, Codex y compañía. El bucle es:
 
 El contrato JSON (`--json`) es estable: `{ score, label, diagnostics: [{ id, category, severity, file, line, message, recommendation }] }`.
 
+## 🌐 Dashboard web
+
+Para una experiencia visual e interactiva (ratón, filtros en vivo, expandir hallazgos):
+
+```bash
+laravel-doctor serve --base /var/www/html      # abre el navegador en http://127.0.0.1:8420
+```
+
+Levanta un servidor local (PHP embebido, solo `127.0.0.1`) con una UI de una sola página:
+selector de proyecto, **re-escanear**, toggle de **análisis runtime (`--boot`)**, **filtros** por
+categoría, **buscador** en vivo, y cada hallazgo se expande con su mensaje, recomendación y el
+**fragmento de código** (con enlace `vscode://` para abrirlo en el editor). Sin build ni npm.
+
 ## 🖥️ Terminal interactiva (TUI)
 
 ¿Varios proyectos en una máquina? `tui` los descubre y te deja auditarlos desde un menú, sin teclear rutas:

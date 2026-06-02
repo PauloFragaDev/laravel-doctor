@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>laravel-doctor</title>
+<style>
+  :root {
+    --bg:#0b0e14; --panel:#121722; --line:#222a39; --txt:#e6e9ef; --mut:#8a93a6;
+    --err:#ef4444; --warn:#f59e0b; --info:#3b82f6; --ok:#22c55e; --accent:#7c93ff;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.5 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif; }
+  header { display:flex; align-items:center; gap:16px; padding:14px 20px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; flex-wrap:wrap; }
+  h1 { font-size:16px; margin:0; font-weight:700; letter-spacing:.3px; }
+  h1 .dot { color:var(--accent); }
+  select, input, button { background:#0e131d; color:var(--txt); border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-size:13px; }
+  button { cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  label.toggle { display:flex; align-items:center; gap:6px; color:var(--mut); font-size:13px; }
+  .score { margin-left:auto; display:flex; align-items:center; gap:14px; }
+  .scoreNum { font-size:26px; font-weight:800; }
+  .badges span { display:inline-flex; align-items:center; gap:5px; margin-left:10px; color:var(--mut); font-size:13px; }
+  .badges b { color:var(--txt); }
+  .pill { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .pill.err{background:var(--err)} .pill.warn{background:var(--warn)} .pill.info{background:var(--info)}
+  main { padding:18px 20px; max-width:1100px; margin:0 auto; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .chip { padding:5px 11px; border:1px solid var(--line); border-radius:999px; color:var(--mut); cursor:pointer; user-select:none; font-size:12.5px; }
+  .chip.active { background:var(--accent); border-color:var(--accent); color:#0b0e14; font-weight:600; }
+  #search { flex:1; min-width:180px; }
+  .row { border:1px solid var(--line); border-radius:10px; margin-bottom:8px; background:var(--panel); overflow:hidden; }
+  .row .head { display:flex; align-items:center; gap:12px; padding:11px 14px; cursor:pointer; }
+  .sev { font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; text-transform:uppercase; }
+  .sev.error{background:rgba(239,68,68,.15);color:var(--err)} .sev.warning{background:rgba(245,158,11,.15);color:var(--warn)} .sev.info{background:rgba(59,130,246,.15);color:var(--info)}
+  .rule { font-weight:600; }
+  .loc { margin-left:auto; color:var(--mut); font-size:12.5px; font-family:ui-monospace,monospace; }
+  .loc a { color:var(--mut); text-decoration:none; } .loc a:hover{ color:var(--accent); text-decoration:underline; }
+  .detail { padding:0 14px 14px 14px; display:none; color:var(--txt); }
+  .row.open .detail { display:block; }
+  .detail .msg { color:var(--txt); margin:2px 0 8px; }
+  .detail .rec { color:var(--ok); margin-bottom:10px; }
+  .detail pre { background:#0e131d; border:1px solid var(--line); border-radius:8px; padding:10px 12px; overflow:auto; margin:0; color:#cdd6e6; font-family:ui-monospace,monospace; font-size:12.5px; }
+  .empty { color:var(--mut); text-align:center; padding:50px; }
+  .cat { color:var(--mut); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🩺 laravel<span class="dot">·</span>doctor</h1>
+  <select id="project" title="Proyecto"></select>
+  <button id="rescan">↻ Re-escanear</button>
+  <label class="toggle"><input type="checkbox" id="boot"> análisis runtime (--boot)</label>
+  <div class="score">
+    <div><span class="scoreNum" id="scoreNum">—</span><span class="cat" id="scoreLabel"></span></div>
+    <div class="badges" id="badges"></div>
+  </div>
+</header>
+<main>
+  <div class="filters">
+    <span class="chip active" data-cat="all">Todas</span>
+    <span class="chip" data-cat="security">Seguridad</span>
+    <span class="chip" data-cat="performance">Performance</span>
+    <span class="chip" data-cat="eloquent">Eloquent</span>
+    <span class="chip" data-cat="architecture">Arquitectura</span>
+    <input id="search" placeholder="🔎 buscar por regla, archivo o mensaje…">
+  </div>
+  <div id="list"></div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+let all = [], cat = 'all', q = '';
+
+async function loadProjects() {
+  const projects = await fetch('api/projects').then(r => r.json());
+  const sel = $('#project');
+  sel.innerHTML = '';
+  if (!projects.length) { sel.innerHTML = '<option>(sin proyectos)</option>'; $('#list').innerHTML = '<div class="empty">No se encontraron proyectos Laravel en el directorio base.</div>'; return; }
+  for (const p of projects) {
+    const o = document.createElement('option');
+    o.value = p.path; o.textContent = p.name;
+    sel.appendChild(o);
+  }
+  run();
+}
+
+async function run() {
+  const project = $('#project').value;
+  if (!project) return;
+  $('#list').innerHTML = '<div class="empty">Analizando…</div>';
+  const boot = $('#boot').checked ? 1 : 0;
+  const data = await fetch('api/inspect?project=' + encodeURIComponent(project) + '&boot=' + boot).then(r => r.json());
+  if (data.error) { $('#list').innerHTML = '<div class="empty">' + data.error + '</div>'; return; }
+  $('#scoreNum').textContent = data.score;
+  $('#scoreNum').style.color = data.score >= 90 ? 'var(--ok)' : data.score >= 70 ? 'var(--warn)' : 'var(--err)';
+  $('#scoreLabel').textContent = ' ' + data.label;
+  const c = { error:0, warning:0, info:0 };
+  data.diagnostics.forEach(d => c[d.severity] = (c[d.severity]||0)+1);
+  $('#badges').innerHTML =
+    '<span><span class="pill err"></span><b>'+c.error+'</b> errores</span>' +
+    '<span><span class="pill warn"></span><b>'+c.warning+'</b> avisos</span>' +
+    '<span><span class="pill info"></span><b>'+c.info+'</b> info</span>' +
+    (data.bootFailed ? '<span style="color:var(--warn)">⚠ boot falló</span>' : '');
+  all = data.diagnostics;
+  render();
+}
+
+function render() {
+  const list = $('#list');
+  const items = all.filter(d => (cat === 'all' || d.category === cat) &&
+    (q === '' || (d.id + ' ' + d.file + ' ' + d.message).toLowerCase().includes(q)));
+  if (!items.length) { list.innerHTML = '<div class="empty">Sin hallazgos para este filtro. 🎉</div>'; return; }
+  list.innerHTML = items.map((d, i) => {
+    const loc = d.line > 0
+      ? '<a href="vscode://file/' + d.file + ':' + d.line + '">' + d.file + ':' + d.line + '</a>'
+      : d.file;
+    const snip = d.snippet ? '<pre>' + escapeHtml(d.snippet) + '</pre>' : '';
+    return '<div class="row" data-i="'+i+'">' +
+      '<div class="head"><span class="sev '+d.severity+'">'+d.severity+'</span>' +
+      '<span class="rule">'+d.id+'</span><span class="cat">'+d.category+'</span>' +
+      '<span class="loc">'+loc+'</span></div>' +
+      '<div class="detail"><div class="msg">'+escapeHtml(d.message)+'</div>' +
+      '<div class="rec">→ '+escapeHtml(d.recommendation)+'</div>'+snip+'</div></div>';
+  }).join('');
+  list.querySelectorAll('.row .head').forEach(h => h.onclick = () => h.parentElement.classList.toggle('open'));
+}
+
+function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+document.querySelectorAll('.chip').forEach(ch => ch.onclick = () => {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  ch.classList.add('active'); cat = ch.dataset.cat; render();
+});
+$('#search').oninput = e => { q = e.target.value.toLowerCase().trim(); render(); };
+$('#project').onchange = run;
+$('#rescan').onclick = run;
+$('#boot').onchange = run;
+loadProjects();
+</script>
+</body>
+</html>

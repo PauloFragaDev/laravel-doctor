@@ -12,12 +12,14 @@ foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php
 
 use LaravelDoctor\Console\InspectCommand;
 use LaravelDoctor\Console\InstallCommand;
+use LaravelDoctor\Console\ServeCommand;
 use LaravelDoctor\Console\TuiCommand;
 use Symfony\Component\Console\Application;
 
 $app = new Application('laravel-doctor', '0.1.0');
 $app->add(new InspectCommand());
 $app->add(new InstallCommand());
+$app->add(new ServeCommand());
 $tui = new TuiCommand();
 $app->add($tui);
 // Sin argumentos, `laravel-doctor` abre el menú interactivo.
