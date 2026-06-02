@@ -8,6 +8,7 @@ use LaravelDoctor\Rules\Runtime\NoDebugInProduction;
 use LaravelDoctor\Rules\Runtime\NoMissingCastsForJson;
 use LaravelDoctor\Rules\Runtime\NoRouteWithoutAuth;
 use LaravelDoctor\Rules\Runtime\NoUnindexedForeignKey;
+use LaravelDoctor\Rules\Runtime\PreferBigintForeignKey;
 
 final class ManifestRuleRegistry
 {
@@ -21,6 +22,7 @@ final class ManifestRuleRegistry
             new NoDebugInProduction(),
             new NoMissingCastsForJson(),
             new NoUnindexedForeignKey(),
+            new PreferBigintForeignKey(),
         ];
     }
 }

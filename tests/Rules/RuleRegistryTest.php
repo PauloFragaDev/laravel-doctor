@@ -15,7 +15,7 @@ final class RuleRegistryTest extends TestCase
         $rules = RuleRegistry::all();
 
         $this->assertContainsOnlyInstancesOf(Rule::class, $rules);
-        $this->assertCount(10, $rules);
+        $this->assertCount(11, $rules);
 
         $ids = array_map(fn (Rule $r) => $r->id(), $rules);
         $this->assertSame($ids, array_unique($ids), 'Los ids de regla deben ser únicos');
@@ -31,6 +31,7 @@ final class RuleRegistryTest extends TestCase
             'no-all-then-filter',
             'no-fat-controller-method',
             'no-business-logic-in-route-closure',
+            'no-hardcoded-credentials',
         ] as $expected) {
             $this->assertContains($expected, $ids);
         }
