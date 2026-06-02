@@ -11,8 +11,8 @@ use LaravelDoctor\Score\ScoreResult;
 
 /**
  * Pinta los resultados de una auditoría como bloque de texto con color (ANSI), agrupado por
- * categoría y con badges por severidad. Función pura → testeable (el texto/badges van en claro,
- * solo los códigos de color envuelven).
+ * categoría y con conteos por severidad. Función pura → testeable (texto en claro, los códigos
+ * de color solo envuelven). Las rutas se muestran relativas al proyecto.
  */
 final class ResultsRenderer
 {
@@ -21,10 +21,10 @@ final class ResultsRenderer
     private const DIM = "\e[2m";
 
     private const CATEGORY_LABELS = [
-        Categories::SECURITY => 'SEGURIDAD',
-        Categories::PERFORMANCE => 'PERFORMANCE',
-        Categories::ELOQUENT => 'ELOQUENT',
-        Categories::ARCHITECTURE => 'ARQUITECTURA',
+        Categories::SECURITY => 'Seguridad',
+        Categories::PERFORMANCE => 'Performance',
+        Categories::ELOQUENT => 'Eloquent',
+        Categories::ARCHITECTURE => 'Arquitectura',
     ];
 
     private const ORDER = [
@@ -37,39 +37,7 @@ final class ResultsRenderer
     /**
      * @param Diagnostic[] $diagnostics
      */
-    public function render(string $projectName, ScoreResult $score, array $diagnostics): string
-    {
-        $lines = ['', $this->header($projectName, $score, $diagnostics), ''];
-
-        if ($diagnostics === []) {
-            $lines[] = '  ' . $this->color('32', '✓ Sin hallazgos. 🎉');
-            $lines[] = '';
-
-            return implode("\n", $lines);
-        }
-
-        foreach (self::ORDER as $category) {
-            $group = array_values(array_filter($diagnostics, fn (Diagnostic $d) => $d->category === $category));
-            if ($group === []) {
-                continue;
-            }
-            $lines[] = '  ' . self::BOLD . (self::CATEGORY_LABELS[$category] ?? strtoupper($category)) . self::RESET;
-            foreach ($group as $d) {
-                $loc = $d->line > 0 ? $d->file . ':' . $d->line : $d->file;
-                $lines[] = sprintf(
-                    '   %s %s   %s',
-                    $this->icon($d->severity),
-                    str_pad($d->ruleId, 32),
-                    self::DIM . $loc . self::RESET,
-                );
-            }
-            $lines[] = '';
-        }
-
-        return implode("\n", $lines);
-    }
-
-    private function header(string $projectName, ScoreResult $score, array $diagnostics): string
+    public function render(string $projectName, string $projectPath, ScoreResult $score, array $diagnostics): string
     {
         $counts = ['error' => 0, 'warning' => 0, 'info' => 0];
         foreach ($diagnostics as $d) {
@@ -78,23 +46,67 @@ final class ResultsRenderer
 
         $scoreColor = $score->score >= 90 ? '32' : ($score->score >= 70 ? '33' : '31');
 
-        return sprintf(
-            '  %s%s%s  %s·%s  Score %s%d/100%s (%s)  %s·%s  %s %s %s',
-            self::BOLD,
-            $projectName,
-            self::RESET,
-            self::DIM,
-            self::RESET,
-            $this->color($scoreColor, ''),
-            $score->score,
-            self::RESET,
-            $score->label,
-            self::DIM,
-            self::RESET,
-            $this->color('31', '✖' . $counts['error']),
-            $this->color('33', '⚠' . $counts['warning']),
-            $this->color('34', '•' . $counts['info']),
-        );
+        $lines = [
+            '',
+            '  ' . self::BOLD . $projectName . self::RESET . '   '
+                . $this->color($scoreColor, sprintf('Score %d/100', $score->score))
+                . self::DIM . ' · ' . $score->label . self::RESET,
+            '  ' . $this->color('31', '✖ ' . $counts['error'] . ' errores') . '    '
+                . $this->color('33', '⚠ ' . $counts['warning'] . ' avisos') . '    '
+                . $this->color('34', '• ' . $counts['info'] . ' info'),
+            '',
+        ];
+
+        if ($diagnostics === []) {
+            $lines[] = '  ' . $this->color('32', '✓ Sin hallazgos. 🎉');
+            $lines[] = '';
+
+            return implode("\n", $lines);
+        }
+
+        // Ancho de la columna de la regla para alinear la ubicación.
+        $ruleWidth = 0;
+        foreach ($diagnostics as $d) {
+            $ruleWidth = max($ruleWidth, mb_strlen($d->ruleId));
+        }
+
+        foreach (self::ORDER as $category) {
+            $group = array_values(array_filter($diagnostics, fn (Diagnostic $d) => $d->category === $category));
+            if ($group === []) {
+                continue;
+            }
+            $label = self::CATEGORY_LABELS[$category] ?? ucfirst($category);
+            $lines[] = '  ' . self::BOLD . strtoupper($label) . self::RESET
+                . self::DIM . ' (' . count($group) . ')' . self::RESET;
+            foreach ($group as $d) {
+                $lines[] = sprintf(
+                    '    %s  %s  %s',
+                    $this->icon($d->severity),
+                    str_pad($d->ruleId, $ruleWidth),
+                    self::DIM . $this->location($d, $projectPath) . self::RESET,
+                );
+            }
+            $lines[] = '';
+        }
+
+        return implode("\n", $lines);
+    }
+
+    public function location(Diagnostic $d, string $projectPath): string
+    {
+        $file = $this->relative($d->file, $projectPath);
+
+        return $d->line > 0 ? $file . ':' . $d->line : $file;
+    }
+
+    private function relative(string $file, string $projectPath): string
+    {
+        $base = rtrim($projectPath, '/') . '/';
+        if (str_starts_with($file, $base)) {
+            return substr($file, strlen($base));
+        }
+
+        return $file;
     }
 
     private function icon(Severity $severity): string

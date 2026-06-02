@@ -74,7 +74,7 @@ final class InteractiveSession
             );
 
             $diagnostics = $this->filter($result->diagnostics, $category);
-            echo $this->renderer->render($name, $result->score, $diagnostics);
+            echo $this->renderer->render($name, $path, $result->score, $diagnostics);
 
             $action = select('¿Qué quieres hacer?', [
                 'detail' => 'Ver detalle de un hallazgo',
@@ -129,12 +129,15 @@ final class InteractiveSession
 
         $options = [];
         foreach ($diagnostics as $i => $d) {
-            $loc = $d->line > 0 ? $d->file . ':' . $d->line : $d->file;
-            $options[$i] = sprintf('[%s] %s  %s', strtoupper($d->severity->value), $d->ruleId, $loc);
+            $options[(string) $i] = sprintf('%s  %s', $d->ruleId, $this->renderer->location($d, $path));
         }
+        $options['back'] = '← Volver';
 
-        $i = (int) select('¿Qué hallazgo?', $options, scroll: 12);
-        $d = $diagnostics[$i];
+        $choice = select('¿Qué hallazgo? (↑↓ y Enter)', $options, scroll: 15);
+        if ($choice === 'back') {
+            return;
+        }
+        $d = $diagnostics[(int) $choice];
 
         $body = $d->ruleId . "\n\n" . $d->message . "\n\n→ " . $d->recommendation;
         $snippet = $this->snippet($d->file, $d->line, $path);
