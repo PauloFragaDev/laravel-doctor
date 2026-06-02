@@ -186,38 +186,73 @@ final class TerminalApp
             $label = '🩺 laravel-doctor · elige un proyecto';
         }
 
-        // Cabecera = título + banner animado de varias filas que llena el ancho.
-        $cols = max(10, $width - 4);
-        $content = ' <options=bold>' . $label . '</>' . "\n" . $this->logoBanner($tick, $cols, 4);
+        // Título a la izquierda, ECG animado a la derecha.
+        $rows = 5;
+        $titleLines = array_fill(0, $rows, '');
+        $titleLines[intdiv($rows, 2)] = ' <options=bold>' . $label . '</>';
 
-        return $this->block()->widget(ParagraphWidget::fromText(Text::parse($content)));
+        $ecgCols = max(12, $width - 48);
+
+        return $this->block()->widget(
+            GridWidget::default()
+                ->direction(Direction::Horizontal)
+                ->constraints(Constraint::length(44), Constraint::min(1))
+                ->widgets(
+                    ParagraphWidget::fromText(Text::parse(implode("\n", $titleLines))),
+                    ParagraphWidget::fromText(Text::parse($this->ecg($tick, $ecgCols, $rows))),
+                ),
+        );
     }
 
     /**
-     * Banner animado multi-fila de mini-dots en el color de la herramienta (cian) con fade.
-     * Una onda diagonal de brillo barre de lado a lado, llenando el ancho hasta el final.
+     * Electrocardiograma animado (tema "doctor"): una línea de latido que se desplaza, en cian
+     * con el frente brillante. Multi-fila y llamativo. Encaja con la herramienta.
      */
-    private function logoBanner(int $tick, int $cols, int $rows): string
+    private function ecg(int $tick, int $cols, int $rows): string
     {
-        $span = max(1, $cols - 1);
-        $t = $tick * 2;                                   // velocidad
-        $pos = abs(($t % (2 * $span)) - $span);
+        $mid = intdiv($rows, 2);
+        $top = 0;
+        $bottom = $rows - 1;
+
+        // Un latido: baseline plano, pequeña onda P, complejo QRS (pico) y onda T.
+        $beat = array_merge(
+            array_fill(0, 8, $mid),
+            [max($top, $mid - 1), $mid, $mid],
+            [min($bottom, $mid + 1), $top, $bottom, $mid],   // QRS
+            [max($top, $mid - 1), $mid],
+            array_fill(0, 6, $mid),
+        );
+        $len = count($beat);
+
+        // y(x): la traza se desplaza a la izquierda con el tick.
+        $yAt = static fn (int $x): int => $beat[(($x + $tick * 2) % $len + $len) % $len];
+
+        // Frente brillante (el "pen" que avanza), a la derecha.
+        $pen = $cols - 1 - ($tick % $cols);
+
+        // Matriz de celdas.
+        $grid = array_fill(0, $rows, array_fill(0, $cols, null));
+        for ($x = 0; $x < $cols; $x++) {
+            $y = $yAt($x);
+            $yPrev = $yAt($x - 1);
+            $from = min($y, $yPrev);
+            $to = max($y, $yPrev);
+            for ($r = $from; $r <= $to; $r++) {
+                $grid[$r][$x] = abs($x - $pen) <= 1 ? 'pen' : 'line';
+            }
+        }
 
         $lines = [];
         for ($r = 0; $r < $rows; $r++) {
             $line = '';
-            for ($c = 0; $c < $cols; $c++) {
-                // El desfase por fila hace la onda diagonal.
-                $d = abs($c - ($pos - $r * 2));
-                $line .= match (true) {
-                    $d <= 0 => '<options=bold;fg=white>●</>',
-                    $d <= 2 => '<options=bold;fg=cyan>●</>',
-                    $d <= 5 => '<fg=cyan>•</>',
-                    $d <= 9 => '<fg=gray>·</>',
-                    default => '<fg=darkgray>·</>',
+            for ($x = 0; $x < $cols; $x++) {
+                $line .= match ($grid[$r][$x]) {
+                    'pen' => '<options=bold;fg=white>█</>',
+                    'line' => '<fg=cyan>━</>',
+                    default => ($r === $mid ? '<fg=darkgray>·</>' : ' '),
                 };
             }
-            $lines[] = ' ' . $line;
+            $lines[] = $line;
         }
 
         return implode("\n", $lines);
