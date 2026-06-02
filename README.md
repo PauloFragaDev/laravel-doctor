@@ -9,7 +9,8 @@ Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcio
 
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
-[![Tests](https://img.shields.io/badge/tests-109%20passing-22c55e?style=flat)](#desarrollo)
+[![CI](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-140%20passing-22c55e?style=flat)](#desarrollo)
 [![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
 
 </div>
@@ -77,9 +78,9 @@ Dos modos que se complementan:
 
 | Categoría | Reglas |
 |-----------|--------|
-| 🔒 **Seguridad** | `no-env-outside-config` · `no-mass-assignment-guarded-empty` · `no-raw-sql-interpolation` · `no-unescaped-blade-output` · `no-route-without-auth` ⚡ · `no-debug-in-production` ⚡ |
+| 🔒 **Seguridad** | `no-env-outside-config` · `no-mass-assignment-guarded-empty` · `no-raw-sql-interpolation` · `no-hardcoded-credentials` · `no-unescaped-blade-output` · `no-route-without-auth` ⚡ · `no-debug-in-production` ⚡ |
 | 🚀 **Performance / DB** | `prefer-exists-over-count` · `no-query-in-loop` · `no-all-then-filter` · `no-unindexed-foreign-key` ⚡ |
-| 🧬 **Eloquent** | `no-save-in-loop-without-transaction` · `no-missing-casts-for-json` ⚡ |
+| 🧬 **Eloquent** | `no-save-in-loop-without-transaction` · `no-missing-casts-for-json` ⚡ · `prefer-bigint-foreign-key` ⚡ |
 | 🏗️ **Arquitectura** | `no-fat-controller-method` · `prefer-form-request-validation` · `no-business-logic-in-route-closure` |
 | 🎨 **Blade** | `no-unescaped-blade-output` · `no-logic-in-blade` |
 
@@ -198,8 +199,10 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] Terminal interactiva (TUI)
 - [x] Config `doctor.config.php` (activar/desactivar reglas, severidades, ignores)
 - [x] GitHub Action con anotaciones en PR
-- [x] Reglas runtime dirigidas por el esquema real (FK sin índice)
-- [ ] Más reglas dirigidas por esquema (índices compuestos, columnas sin usar)
+- [x] Reglas runtime dirigidas por el esquema real (FK sin índice, FK no-bigint)
+- [x] Detección de credenciales hardcodeadas
+- [x] CI propia (matriz PHP 8.2–8.4)
+- [ ] Publicación en Packagist
 
 > Nota de diseño: el N+1 "por observación real" (ejecutar la app y contar queries) queda
 > deliberadamente fuera: es no-determinista y contradice el principio de la herramienta.

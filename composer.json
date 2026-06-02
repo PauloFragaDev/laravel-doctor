@@ -3,6 +3,7 @@
     "description": "Auditor determinista para codebases Laravel: seguridad, performance, Eloquent y arquitectura.",
     "type": "library",
     "license": "MIT",
+    "keywords": ["laravel", "linter", "static-analysis", "security", "performance", "eloquent", "blade", "code-quality", "audit"],
     "require": {
         "php": ">=8.2",
         "nikic/php-parser": "^5.0",
