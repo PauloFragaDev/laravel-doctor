@@ -138,6 +138,19 @@ return [
 
 Sin archivo de config, el comportamiento es el de por defecto.
 
+### Silenciar un hallazgo puntual
+
+Con un comentario en el propio código (funciona en PHP y Blade):
+
+```php
+// laravel-doctor-disable-next-line no-env-outside-config
+$key = env('STRIPE_KEY');
+
+$key = env('STRIPE_KEY'); // laravel-doctor-disable-line
+```
+
+Sin nombrar regla, silencia todas las de esa línea; con el id, solo esa.
+
 ## 🔁 CI / GitHub Action
 
 Hay una action reutilizable (`action.yml`) que audita cada PR y deja **anotaciones inline** donde el revisor ya mira:
