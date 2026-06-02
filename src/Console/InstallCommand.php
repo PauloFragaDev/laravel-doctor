@@ -38,7 +38,12 @@ final class InstallCommand extends Command
             return Command::FAILURE;
         }
 
-        file_put_contents($destDir . '/SKILL.md', $contents);
+        if (file_put_contents($destDir . '/SKILL.md', $contents) === false) {
+            $output->writeln('<error>No se pudo escribir la skill.</error>');
+
+            return Command::FAILURE;
+        }
+
         $output->writeln('Skill instalada en ' . $destDir . '/SKILL.md');
 
         return Command::SUCCESS;

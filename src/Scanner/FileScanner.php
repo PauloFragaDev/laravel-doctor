@@ -10,7 +10,7 @@ use RecursiveIteratorIterator;
 final class FileScanner
 {
     private const EXCLUDED_DIRS = [
-        'vendor', 'node_modules', 'storage', '.git', 'bootstrap/cache', 'public',
+        'vendor', 'node_modules', 'storage', '.git', 'bootstrap/cache', 'public', 'tests',
     ];
 
     /**

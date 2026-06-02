@@ -29,10 +29,12 @@ final class Engine
      * @param SourceFile[] $files
      * @return Diagnostic[]
      */
-    public function inspect(array $files, ?array $runtimeManifest = null): array
+    public function inspect(array $files, ?RuntimeManifest $runtimeManifest = null): array
     {
         $collector = new DiagnosticCollector();
         $visitor = new RuleVisitor($this->rules, $collector);
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
 
         foreach ($files as $file) {
             try {
@@ -51,8 +53,6 @@ final class Engine
             }
 
             $visitor->setFile($file->path);
-            $traverser = new NodeTraverser();
-            $traverser->addVisitor($visitor);
             $traverser->traverse($stmts);
         }
 

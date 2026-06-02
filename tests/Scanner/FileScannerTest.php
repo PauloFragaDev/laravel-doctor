@@ -16,9 +16,11 @@ final class FileScannerTest extends TestCase
         $this->root = sys_get_temp_dir() . '/ld-scan-' . uniqid();
         mkdir($this->root . '/app', 0777, true);
         mkdir($this->root . '/vendor/foo', 0777, true);
+        mkdir($this->root . '/tests', 0777, true);
         file_put_contents($this->root . '/app/User.php', "<?php\n");
         file_put_contents($this->root . '/app/notes.txt', "hola");
         file_put_contents($this->root . '/vendor/foo/Skip.php', "<?php\n");
+        file_put_contents($this->root . '/tests/UserTest.php', "<?php\n");
     }
 
     protected function tearDown(): void
@@ -34,6 +36,7 @@ final class FileScannerTest extends TestCase
         $this->assertContains($this->root . '/app/User.php', $paths);
         $this->assertNotContains($this->root . '/vendor/foo/Skip.php', $paths);
         $this->assertNotContains($this->root . '/app/notes.txt', $paths);
+        $this->assertNotContains($this->root . '/tests/UserTest.php', $paths);
     }
 
     public function test_source_file_carries_contents(): void
