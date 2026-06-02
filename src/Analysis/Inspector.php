@@ -8,6 +8,7 @@ use LaravelDoctor\Blade\BladeEngine;
 use LaravelDoctor\Blade\BladeRuleRegistry;
 use LaravelDoctor\Config\ConfigApplier;
 use LaravelDoctor\Config\ConfigLoader;
+use LaravelDoctor\Config\InlineSuppressions;
 use LaravelDoctor\Diagnostics\Pipeline;
 use LaravelDoctor\Engine\Engine;
 use LaravelDoctor\Rules\RuleRegistry;
@@ -58,6 +59,12 @@ final class Inspector
 
         $config = (new ConfigLoader())->load($path);
         $diagnostics = (new ConfigApplier())->apply($diagnostics, $config);
+
+        $fileContents = [];
+        foreach ($files as $file) {
+            $fileContents[$file->path] = $file->contents;
+        }
+        $diagnostics = (new InlineSuppressions())->filter($diagnostics, $fileContents);
 
         $diagnostics = (new Pipeline())->process($diagnostics);
         $score = (new ScoreCalculator())->score($diagnostics);
