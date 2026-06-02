@@ -92,7 +92,7 @@ final class TerminalApp
                 }
             }
 
-            usleep(60_000);
+            usleep(40_000);
         }
     }
 
@@ -194,24 +194,30 @@ final class TerminalApp
         );
     }
 
+    private const LOGO_PALETTE = ['red', 'yellow', 'green', 'cyan', 'blue', 'magenta'];
+
     /**
-     * Logo animado: una fila larga de mini-dots que llena el ancho hasta el final, con una
-     * banda de brillo (fade) que barre de lado a lado. Se recorta al ancho del terminal.
+     * Logo animado: fila de mini-dots arcoíris que llena el ancho hasta el final. Los colores
+     * fluyen (cambian cada frame) y una banda blanca brillante barre de lado a lado.
      */
     private function logo(int $tick, int $n): string
     {
-        $span = max(1, $n - 1);  // la banda barre exactamente el ancho visible de dots
-        $t = intdiv($tick, 2);
+        $span = max(1, $n - 1);
+        $t = $tick * 2;                                   // más rápido
         $pos = abs(($t % (2 * $span)) - $span);
+        $palette = self::LOGO_PALETTE;
+        $count = count($palette);
+
         $out = '';
         for ($i = 0; $i < $n; $i++) {
             $d = abs($i - $pos);
-            $out .= match (true) {
-                $d === 0 => '<options=bold;fg=white>●</>',
-                $d <= 2 => '<fg=cyan>●</>',
-                $d <= 5 => '<fg=gray>•</>',
-                default => '<fg=darkgray>·</>',
-            };
+            if ($d === 0) {
+                $out .= '<options=bold;fg=white>●</>';   // banda brillante
+                continue;
+            }
+            $color = $palette[($i + $tick) % $count];     // arcoíris que fluye
+            $glyph = $d <= 3 ? '●' : ($d <= 6 ? '•' : '·');
+            $out .= '<fg=' . $color . '>' . $glyph . '</>';
         }
 
         return $out;
