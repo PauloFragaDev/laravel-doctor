@@ -21,5 +21,6 @@ final class ManifestRuleRegistryTest extends TestCase
         $this->assertContains('no-debug-in-production', $ids);
         $this->assertContains('no-missing-casts-for-json', $ids);
         $this->assertContains('no-unindexed-foreign-key', $ids);
+        $this->assertContains('prefer-bigint-foreign-key', $ids);
     }
 }

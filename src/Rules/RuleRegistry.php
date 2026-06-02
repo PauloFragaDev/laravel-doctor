@@ -12,6 +12,7 @@ use LaravelDoctor\Rules\Performance\NoAllThenFilter;
 use LaravelDoctor\Rules\Performance\NoQueryInLoop;
 use LaravelDoctor\Rules\Performance\PreferExistsOverCount;
 use LaravelDoctor\Rules\Security\NoEnvOutsideConfig;
+use LaravelDoctor\Rules\Security\NoHardcodedCredentials;
 use LaravelDoctor\Rules\Security\NoMassAssignmentGuardedEmpty;
 use LaravelDoctor\Rules\Security\NoRawSqlInterpolation;
 
@@ -26,6 +27,7 @@ final class RuleRegistry
             new NoEnvOutsideConfig(),
             new NoMassAssignmentGuardedEmpty(),
             new NoRawSqlInterpolation(),
+            new NoHardcodedCredentials(),
             new PreferExistsOverCount(),
             new NoQueryInLoop(),
             new NoAllThenFilter(),
