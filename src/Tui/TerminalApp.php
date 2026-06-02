@@ -263,7 +263,7 @@ final class TerminalApp
                 ListWidget::default()
                     ->highlightSymbol('› ')
                     ->highlightStyle(Style::default()->cyan())
-                    ->select($state->projectIndex)
+                    ->select($projects === [] ? null : $state->projectIndex)
                     ->items(...$items),
             );
     }
