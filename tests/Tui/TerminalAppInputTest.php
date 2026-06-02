@@ -51,8 +51,12 @@ final class TerminalAppInputTest extends TestCase
 
         $this->assertFalse($this->searching($app));
 
-        $this->char($app, $state, '/');
-        $this->assertTrue($this->searching($app), "'/' debe activar la búsqueda");
+        $this->char($app, $state, 's');
+        $this->assertTrue($this->searching($app), "'s' debe activar la búsqueda");
+        // y '/' también
+        $app2 = new TerminalApp();
+        $this->char($app2, $state, '/');
+        $this->assertTrue($this->searching($app2), "'/' debe activar la búsqueda");
 
         foreach (str_split('shop') as $c) {
             $this->char($app, $state, $c);

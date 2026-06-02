@@ -88,7 +88,9 @@ final class TerminalApp
             $display->draw($this->layout($state, $tick++, $width));
 
             while (null !== $event = $terminal->events()->next()) {
-                if ($event instanceof CharKeyEvent && $event->modifiers === KeyModifiers::NONE) {
+                // Aceptamos chars con o sin SHIFT; solo ignoramos combos con Ctrl/Alt.
+                if ($event instanceof CharKeyEvent
+                    && ($event->modifiers & (KeyModifiers::CONTROL | KeyModifiers::ALT)) === 0) {
                     if ($this->handleChar($state, $event->char)) {
                         return;
                     }
@@ -111,7 +113,7 @@ final class TerminalApp
         if ($char === 'q') {
             return true;
         }
-        if ($char === '/') {
+        if ($char === '/' || $char === 's') {
             $this->searching = true;
         } elseif ($char === 'c' && $state->screen === EnvironmentState::SCREEN_RESULTS) {
             $state->cycleCategory();
@@ -294,7 +296,9 @@ final class TerminalApp
 
     private function bar(EnvironmentState $state): Widget
     {
-        $search = sprintf('🔎 %s%s', $state->search, $this->searching ? '_' : '');
+        $search = $this->searching
+            ? sprintf('<options=bold;fg=cyan>🔎 %s▏</>', $state->search)
+            : sprintf('<fg=gray>🔎 %s  (pulsa s para buscar)</>', $state->search);
 
         if ($state->screen === EnvironmentState::SCREEN_RESULTS) {
             $tabs = [];
@@ -401,9 +405,9 @@ final class TerminalApp
         if ($this->searching) {
             $title = ' escribe para filtrar · Enter/Esc para salir de la búsqueda ';
         } elseif ($state->screen === EnvironmentState::SCREEN_HOME) {
-            $title = ' ↑↓ mover · Enter abrir · / buscar · q salir ';
+            $title = ' ↑↓ mover · Enter abrir · s buscar · q salir ';
         } else {
-            $title = ' ↑↓ mover · Tab/c categoría · / buscar · b runtime · Esc volver · q salir ';
+            $title = ' ↑↓ mover · Tab/c categoría · s buscar · b runtime · Esc volver · q salir ';
         }
 
         return $this->block()->titles(Title::fromString($title));
