@@ -15,9 +15,14 @@ use PhpTui\Term\KeyCode;
 use PhpTui\Term\KeyModifiers;
 use PhpTui\Term\Terminal;
 use PhpTui\Tui\Bridge\PhpTerm\PhpTermBackend;
+use PhpTui\Tui\Canvas\CanvasContext;
+use PhpTui\Tui\Canvas\Marker;
+use PhpTui\Tui\Color\AnsiColor;
 use PhpTui\Tui\Display\Display;
 use PhpTui\Tui\DisplayBuilder;
+use PhpTui\Tui\Extension\Core\Shape\LineShape;
 use PhpTui\Tui\Extension\Core\Widget\BlockWidget;
+use PhpTui\Tui\Extension\Core\Widget\CanvasWidget;
 use PhpTui\Tui\Extension\Core\Widget\GridWidget;
 use PhpTui\Tui\Extension\Core\Widget\List\ListItem;
 use PhpTui\Tui\Extension\Core\Widget\ListWidget;
@@ -186,12 +191,10 @@ final class TerminalApp
             $label = '🩺 laravel-doctor · elige un proyecto';
         }
 
-        // Título a la izquierda, ECG animado a la derecha.
+        // Título a la izquierda, ECG (canvas braille) a la derecha.
         $rows = 5;
         $titleLines = array_fill(0, $rows, '');
         $titleLines[intdiv($rows, 2)] = ' <options=bold>' . $label . '</>';
-
-        $ecgCols = max(12, $width - 48);
 
         return $this->block()->widget(
             GridWidget::default()
@@ -199,63 +202,65 @@ final class TerminalApp
                 ->constraints(Constraint::length(44), Constraint::min(1))
                 ->widgets(
                     ParagraphWidget::fromText(Text::parse(implode("\n", $titleLines))),
-                    ParagraphWidget::fromText(Text::parse($this->ecg($tick, $ecgCols, $rows))),
+                    $this->ecgCanvas($tick),
                 ),
         );
     }
 
     /**
-     * Electrocardiograma animado (tema "doctor"): una línea de latido que se desplaza, en cian
-     * con el frente brillante. Multi-fila y llamativo. Encaja con la herramienta.
+     * Electrocardiograma animado (tema "doctor") dibujado en un canvas con marcador braille
+     * (alta resolución → línea suave, como btop). La traza se desplaza con el tick.
      */
-    private function ecg(int $tick, int $cols, int $rows): string
+    private function ecgCanvas(int $tick): Widget
     {
-        $mid = intdiv($rows, 2);
-        $top = 0;
-        $bottom = $rows - 1;
+        $scroll = $tick * 2.0;
 
-        // Un latido: baseline plano, pequeña onda P, complejo QRS (pico) y onda T.
-        $beat = array_merge(
-            array_fill(0, 8, $mid),
-            [max($top, $mid - 1), $mid, $mid],
-            [min($bottom, $mid + 1), $top, $bottom, $mid],   // QRS
-            [max($top, $mid - 1), $mid],
-            array_fill(0, 6, $mid),
-        );
-        $len = count($beat);
+        return CanvasWidget::fromIntBounds(0, 100, 0, 100)
+            ->marker(Marker::Braille)
+            ->paint(function (CanvasContext $ctx) use ($scroll): void {
+                $prevX = 0.0;
+                $prevY = $this->ecgY($scroll);
+                for ($x = 1; $x <= 100; $x++) {
+                    $y = $this->ecgY($x + $scroll);
+                    $ctx->draw(
+                        LineShape::fromScalars($prevX, $prevY, (float) $x, $y)->color(AnsiColor::Cyan),
+                    );
+                    $prevX = (float) $x;
+                    $prevY = $y;
+                }
+            });
+    }
 
-        // y(x): la traza se desplaza a la izquierda con el tick.
-        $yAt = static fn (int $x): int => $beat[(($x + $tick * 2) % $len + $len) % $len];
+    /** Altura (0..100) de la traza ECG para una posición; un latido se repite cada L unidades. */
+    private function ecgY(float $globalX): float
+    {
+        $beatLength = 26.0;
+        $base = 42.0;
+        $p = fmod(fmod($globalX, $beatLength) + $beatLength, $beatLength) / $beatLength;
 
-        // Frente brillante (el "pen" que avanza), a la derecha.
-        $pen = $cols - 1 - ($tick % $cols);
+        // Puntos de control de un latido (fracción de fase => desviación sobre la baseline).
+        $cp = [
+            [0.00, 0.0], [0.30, 0.0],
+            [0.345, 12.0], [0.39, 0.0],   // onda P
+            [0.45, 0.0],
+            [0.475, -12.0],               // Q
+            [0.50, 48.0],                 // R (pico)
+            [0.525, -20.0],               // S
+            [0.55, 0.0], [0.66, 0.0],
+            [0.72, 18.0], [0.80, 0.0],    // onda T
+            [1.00, 0.0],
+        ];
 
-        // Matriz de celdas.
-        $grid = array_fill(0, $rows, array_fill(0, $cols, null));
-        for ($x = 0; $x < $cols; $x++) {
-            $y = $yAt($x);
-            $yPrev = $yAt($x - 1);
-            $from = min($y, $yPrev);
-            $to = max($y, $yPrev);
-            for ($r = $from; $r <= $to; $r++) {
-                $grid[$r][$x] = abs($x - $pen) <= 1 ? 'pen' : 'line';
+        for ($i = 1, $n = count($cp); $i < $n; $i++) {
+            if ($p <= $cp[$i][0]) {
+                $span = max(1e-6, $cp[$i][0] - $cp[$i - 1][0]);
+                $t = ($p - $cp[$i - 1][0]) / $span;
+
+                return $base + $cp[$i - 1][1] + ($cp[$i][1] - $cp[$i - 1][1]) * $t;
             }
         }
 
-        $lines = [];
-        for ($r = 0; $r < $rows; $r++) {
-            $line = '';
-            for ($x = 0; $x < $cols; $x++) {
-                $line .= match ($grid[$r][$x]) {
-                    'pen' => '<options=bold;fg=white>█</>',
-                    'line' => '<fg=cyan>━</>',
-                    default => ($r === $mid ? '<fg=darkgray>·</>' : ' '),
-                };
-            }
-            $lines[] = $line;
-        }
-
-        return implode("\n", $lines);
+        return $base;
     }
 
     /** Bloque base: bordes y fondo negro (personalización). */
