@@ -163,7 +163,7 @@ final class TerminalApp
     {
         $grid = GridWidget::default()
             ->direction(Direction::Vertical)
-            ->constraints(Constraint::length(3), Constraint::length(3), Constraint::min(1), Constraint::length(3))
+            ->constraints(Constraint::length(7), Constraint::length(3), Constraint::min(1), Constraint::length(3))
             ->widgets($this->header($state, $tick, $width), $this->bar($state), $this->body($state, $tick), $this->footer($state));
 
         // Bloque raíz sin bordes con fondo negro: fuerza el negro en toda la pantalla.
@@ -186,41 +186,41 @@ final class TerminalApp
             $label = '🩺 laravel-doctor · elige un proyecto';
         }
 
-        // El logo llena desde el final del título hasta el borde derecho.
-        $dots = max(10, $width - mb_strlen($label) - 8);
+        // Cabecera = título + banner animado de varias filas que llena el ancho.
+        $cols = max(10, $width - 4);
+        $content = ' <options=bold>' . $label . '</>' . "\n" . $this->logoBanner($tick, $cols, 4);
 
-        return $this->block()->widget(
-            ParagraphWidget::fromText(Text::parse(' ' . $label . '   ' . $this->logo($tick, $dots) . ' ')),
-        );
+        return $this->block()->widget(ParagraphWidget::fromText(Text::parse($content)));
     }
 
-    private const LOGO_PALETTE = ['red', 'yellow', 'green', 'cyan', 'blue', 'magenta'];
-
     /**
-     * Logo animado: fila de mini-dots arcoíris que llena el ancho hasta el final. Los colores
-     * fluyen (cambian cada frame) y una banda blanca brillante barre de lado a lado.
+     * Banner animado multi-fila de mini-dots en el color de la herramienta (cian) con fade.
+     * Una onda diagonal de brillo barre de lado a lado, llenando el ancho hasta el final.
      */
-    private function logo(int $tick, int $n): string
+    private function logoBanner(int $tick, int $cols, int $rows): string
     {
-        $span = max(1, $n - 1);
-        $t = $tick * 2;                                   // más rápido
+        $span = max(1, $cols - 1);
+        $t = $tick * 2;                                   // velocidad
         $pos = abs(($t % (2 * $span)) - $span);
-        $palette = self::LOGO_PALETTE;
-        $count = count($palette);
 
-        $out = '';
-        for ($i = 0; $i < $n; $i++) {
-            $d = abs($i - $pos);
-            if ($d === 0) {
-                $out .= '<options=bold;fg=white>●</>';   // banda brillante
-                continue;
+        $lines = [];
+        for ($r = 0; $r < $rows; $r++) {
+            $line = '';
+            for ($c = 0; $c < $cols; $c++) {
+                // El desfase por fila hace la onda diagonal.
+                $d = abs($c - ($pos - $r * 2));
+                $line .= match (true) {
+                    $d <= 0 => '<options=bold;fg=white>●</>',
+                    $d <= 2 => '<options=bold;fg=cyan>●</>',
+                    $d <= 5 => '<fg=cyan>•</>',
+                    $d <= 9 => '<fg=gray>·</>',
+                    default => '<fg=darkgray>·</>',
+                };
             }
-            $color = $palette[($i + $tick) % $count];     // arcoíris que fluye
-            $glyph = $d <= 3 ? '●' : ($d <= 6 ? '•' : '·');
-            $out .= '<fg=' . $color . '>' . $glyph . '</>';
+            $lines[] = ' ' . $line;
         }
 
-        return $out;
+        return implode("\n", $lines);
     }
 
     /** Bloque base: bordes y fondo negro (personalización). */
