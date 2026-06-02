@@ -32,6 +32,23 @@ final class ManifestParser
 
         $config = isset($data['config']) && is_array($data['config']) ? $data['config'] : [];
 
-        return new RuntimeManifest($routes, $config);
+        $models = [];
+        foreach ((array) ($data['models'] ?? []) as $model) {
+            if (!is_array($model)) {
+                continue;
+            }
+            $columns = [];
+            foreach ((array) ($model['columns'] ?? []) as $name => $type) {
+                $columns[(string) $name] = (string) $type;
+            }
+            $models[] = new ModelInfo(
+                class: (string) ($model['class'] ?? ''),
+                table: (string) ($model['table'] ?? ''),
+                casts: array_map('strval', (array) ($model['casts'] ?? [])),
+                columns: $columns,
+            );
+        }
+
+        return new RuntimeManifest($routes, $config, $models);
     }
 }

@@ -14,10 +14,12 @@ final readonly class RuntimeManifest
     /**
      * @param RouteInfo[] $routes
      * @param array<string,mixed> $config
+     * @param ModelInfo[] $models
      */
     public function __construct(
         public array $routes,
         public array $config,
+        public array $models = [],
     ) {
     }
 }
