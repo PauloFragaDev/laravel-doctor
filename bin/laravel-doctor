@@ -16,9 +16,10 @@ use LaravelDoctor\Console\TuiCommand;
 use Symfony\Component\Console\Application;
 
 $app = new Application('laravel-doctor', '0.1.0');
-$inspect = new InspectCommand();
-$app->add($inspect);
+$app->add(new InspectCommand());
 $app->add(new InstallCommand());
-$app->add(new TuiCommand());
-$app->setDefaultCommand((string) $inspect->getName());
+$tui = new TuiCommand();
+$app->add($tui);
+// Sin argumentos, `laravel-doctor` abre el menú interactivo.
+$app->setDefaultCommand((string) $tui->getName());
 $app->run();

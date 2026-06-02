@@ -7,8 +7,8 @@ namespace LaravelDoctor\Tui;
 final class ProjectDiscovery
 {
     /**
-     * Descubre proyectos Laravel directamente bajo $baseDir: una subcarpeta es un proyecto
-     * Laravel si contiene un fichero `artisan`. Ordenados por nombre.
+     * Descubre proyectos Laravel: el propio $baseDir si es una app Laravel, y cada subcarpeta
+     * directa que contenga un fichero `artisan`. Ordenados por nombre.
      *
      * @return ProjectInfo[]
      */
@@ -20,6 +20,13 @@ final class ProjectDiscovery
         }
 
         $projects = [];
+
+        // El propio directorio base, si ya es una app Laravel: permite ejecutar el menú dentro
+        // de un proyecto y auditarlo directamente, sin pasar --base.
+        if (is_file($baseDir . '/artisan')) {
+            $projects[] = new ProjectInfo(basename($baseDir) ?: $baseDir, $baseDir);
+        }
+
         foreach (glob($baseDir . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
             if (is_file($dir . '/artisan')) {
                 $projects[] = new ProjectInfo(basename($dir), $dir);
