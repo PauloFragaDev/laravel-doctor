@@ -6,6 +6,7 @@
     "keywords": ["laravel", "linter", "static-analysis", "security", "performance", "eloquent", "blade", "code-quality", "audit"],
     "require": {
         "php": ">=8.2",
+        "laravel/prompts": "^0.3 || ^0.1",
         "nikic/php-parser": "^5.0",
         "symfony/console": "^7.0"
     },

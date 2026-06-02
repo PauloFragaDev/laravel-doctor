@@ -117,31 +117,37 @@ Instala una *skill* para Claude Code, Cursor, Codex y compañía. El bucle es:
 
 El contrato JSON (`--json`) es estable: `{ score, label, diagnostics: [{ id, category, severity, file, line, message, recommendation }] }`.
 
-## 🖥️ Terminal interactiva (TUI)
+## 🖥️ Terminal interactiva
 
-¿Varios proyectos en una máquina? `tui` los descubre y te deja auditarlos desde un menú, sin teclear rutas:
+`laravel-doctor` sin argumentos (o `laravel-doctor tui`) abre una experiencia interactiva
+moderna (con [laravel/prompts](https://github.com/laravel/prompts)): selector de proyecto con
+scroll y búsqueda al teclear, spinner mientras analiza, y resultados a color agrupados por
+categoría con badges por severidad.
 
 ```text
-Elige un proyecto:
-  [0] shop
-  [1] blog
-  [2] Salir
- > 0
-Acción:
-  [0] Auditoría global (estático)
-  [1] Auditoría global (con --boot)
-  [2] Por categoría          # security · performance · eloquent · architecture
-  [3] Por regla concreta     # elige una regla del listado
-  [4] Volver
- > 2
-Categoría:
-  [0] security
-  ...
-laravel-doctor — Score: 88/100 (Needs work)
-...
+ ┌ Proyecto a auditar ──────────────────────────────┐
+ │ › shop                                            │
+ │   blog · api                  escribe para filtrar│
+ └───────────────────────────────────────────────────┘
+ ⠹ Analizando shop…
+
+  shop · Score 74/100 (Needs work)  ·  ✖12  ⚠5  •3
+
+  SEGURIDAD
+   ✖ no-env-outside-config            app/Pay.php:12
+   ✖ no-raw-sql-interpolation         app/Repo.php:8
+  PERFORMANCE
+   ⚠ no-query-in-loop                 app/List.php:30
+
+ ┌ ¿Qué quieres hacer? ─────────────────────────────┐
+ │ › Ver detalle de un hallazgo                      │
+ │   Filtrar por categoría · Activar --boot · …      │
+ └───────────────────────────────────────────────────┘
 ```
 
-Eliges el **proyecto** y luego qué ejecutar: una **auditoría global** o **algo específico** (una categoría o una sola regla). El menú vuelve a abrirse tras cada auditoría.
+Desde el menú: **ver el detalle** de un hallazgo (mensaje, recomendación y fragmento de
+código), **filtrar por categoría**, **activar/desactivar `--boot`** o **cambiar de proyecto**.
+Requiere una terminal interactiva (TTY); en CI/pipes usa `inspect`.
 
 ## ⚙️ Configuración
 
