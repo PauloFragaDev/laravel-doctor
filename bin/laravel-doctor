@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $autoload) {
+    if (file_exists($autoload)) {
+        require $autoload;
+        break;
+    }
+}
+
+use LaravelDoctor\Console\InspectCommand;
+use LaravelDoctor\Console\InstallCommand;
+use Symfony\Component\Console\Application;
+
+$app = new Application('laravel-doctor', '0.1.0');
+$inspect = new InspectCommand();
+$app->add($inspect);
+$app->add(new InstallCommand());
+$app->setDefaultCommand((string) $inspect->getName());
+$app->run();
