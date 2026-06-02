@@ -335,15 +335,17 @@ final class TerminalApp
             $projects,
         );
 
+        $list = ListWidget::default()
+            ->highlightSymbol('› ')
+            ->highlightStyle(Style::default()->cyan())
+            ->items(...$items);
+        if ($projects !== []) {
+            $list = $list->select($state->projectIndex);
+        }
+
         return $this->block()
             ->titles(Title::fromString(sprintf(' Proyectos (%d) ', count($projects))))
-            ->widget(
-                ListWidget::default()
-                    ->highlightSymbol('› ')
-                    ->highlightStyle(Style::default()->cyan())
-                    ->select($projects === [] ? null : $state->projectIndex)
-                    ->items(...$items),
-            );
+            ->widget($list);
     }
 
     private function findingsPane(EnvironmentState $state): Widget
@@ -370,15 +372,17 @@ final class TerminalApp
 
         $count = count($state->visibleFindings());
 
+        $list = ListWidget::default()
+            ->highlightSymbol('› ')
+            ->highlightStyle(Style::default()->cyan())
+            ->items(...$items);
+        if ($count > 0) {
+            $list = $list->select($state->selectedRowIndex());
+        }
+
         return $this->block()
             ->titles(Title::fromString(sprintf(' Hallazgos (%d) ', $count)))
-            ->widget(
-                ListWidget::default()
-                    ->highlightSymbol('› ')
-                    ->highlightStyle(Style::default()->cyan())
-                    ->select($count > 0 ? $state->selectedRowIndex() : null)
-                    ->items(...$items),
-            );
+            ->widget($list);
     }
 
     private function detailPane(EnvironmentState $state): Widget
