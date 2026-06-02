@@ -56,7 +56,7 @@ final class TerminalApp
     public function run(array $projects): int
     {
         $terminal = Terminal::new();
-        $display = DisplayBuilder::default(PhpTermBackend::new($terminal))->build();
+        $display = DisplayBuilder::default(PhpTermBackend::new($terminal))->fullscreen()->build();
         $state = new EnvironmentState($projects);
 
         $terminal->execute(Actions::cursorHide());
@@ -160,10 +160,15 @@ final class TerminalApp
 
     private function layout(EnvironmentState $state, int $tick): Widget
     {
-        return GridWidget::default()
+        $grid = GridWidget::default()
             ->direction(Direction::Vertical)
             ->constraints(Constraint::length(3), Constraint::length(3), Constraint::min(1), Constraint::length(3))
             ->widgets($this->header($state, $tick), $this->bar($state), $this->body($state), $this->footer($state));
+
+        // Bloque raíz sin bordes con fondo negro: fuerza el negro en toda la pantalla.
+        return BlockWidget::default()
+            ->style(Style::default()->onBlack())
+            ->widget($grid);
     }
 
     private function header(EnvironmentState $state, int $tick): Widget
