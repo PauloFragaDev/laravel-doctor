@@ -119,34 +119,30 @@ El contrato JSON (`--json`) es estable: `{ score, label, diagnostics: [{ id, cat
 
 ## 🖥️ Terminal interactiva
 
-`laravel-doctor` sin argumentos (o `laravel-doctor tui`) abre una experiencia interactiva
-moderna (con [laravel/prompts](https://github.com/laravel/prompts)): selector de proyecto con
-scroll y búsqueda al teclear, spinner mientras analiza, y resultados a color agrupados por
-categoría con badges por severidad.
+`laravel-doctor` sin argumentos (o `laravel-doctor tui`) abre un **entorno full-screen** real
+(construido con [php-tui](https://github.com/php-tui/php-tui)): paneles con bordes, navegación
+por flechas, **búsqueda en vivo** y detalle del hallazgo a color.
 
 ```text
- ┌ Proyecto a auditar ──────────────────────────────┐
- │ › shop                                            │
- │   blog · api                  escribe para filtrar│
- └───────────────────────────────────────────────────┘
- ⠹ Analizando shop…
-
-  shop · Score 74/100 (Needs work)  ·  ✖12  ⚠5  •3
-
-  SEGURIDAD
-   ✖ no-env-outside-config            app/Pay.php:12
-   ✖ no-raw-sql-interpolation         app/Repo.php:8
-  PERFORMANCE
-   ⚠ no-query-in-loop                 app/List.php:30
-
- ┌ ¿Qué quieres hacer? ─────────────────────────────┐
- │ › Ver detalle de un hallazgo                      │
- │   Filtrar por categoría · Activar --boot · …      │
- └───────────────────────────────────────────────────┘
+┌ 🩺 shop · Score 74/100 (Needs work) ──────────────────────────────────────┐
+└───────────────────────────────────────────────────────────────────────────┘
+┌ Hallazgos (12) ─────────────────────────┐┌ Detalle ───────────────────────┐
+│ › ✖ no-env-outside-config app/Pay.php:12││ ✖ no-env-outside-config        │
+│   ✖ no-raw-sql-interpolation Repo.php:8 ││                                │
+│   ⚠ no-query-in-loop      app/List.php:3││ env() fuera de config/ devuelve│
+│   ⚠ no-all-then-filter    app/User.php:5││ null con la config cacheada…   │
+│                                         ││ → Mueve el valor a config()    │
+└─────────────────────────────────────────┘└────────────────────────────────┘
+┌ ↑↓ mover · / buscar · b runtime · Esc volver · q salir ───────────────────┐
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
-Desde el menú: **ver el detalle** de un hallazgo (mensaje, recomendación y fragmento de
-código), **filtrar por categoría**, **activar/desactivar `--boot`** o **cambiar de proyecto**.
+- **↑↓** navega, **Enter** abre el proyecto, **/** activa la **búsqueda en vivo** (filtra la
+  lista al teclear), **b** activa/desactiva el análisis runtime (`--boot`), **Esc** vuelve,
+  **q** sale.
+- Paneles **proyectos** (inicio) y **hallazgos | detalle** (resultados), con score y badges de
+  severidad a color, y rutas relativas.
+
 Requiere una terminal interactiva (TTY); en CI/pipes usa `inspect`.
 
 ## ⚙️ Configuración

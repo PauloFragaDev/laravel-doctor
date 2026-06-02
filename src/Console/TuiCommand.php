@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelDoctor\Console;
 
-use LaravelDoctor\Tui\InteractiveSession;
 use LaravelDoctor\Tui\ProjectDiscovery;
+use LaravelDoctor\Tui\TerminalApp;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,13 +17,13 @@ final class TuiCommand extends Command
 {
     private ProjectDiscovery $discovery;
 
-    private ?InteractiveSession $session;
+    private ?TerminalApp $app;
 
-    public function __construct(?ProjectDiscovery $discovery = null, ?InteractiveSession $session = null)
+    public function __construct(?ProjectDiscovery $discovery = null, ?TerminalApp $app = null)
     {
         parent::__construct();
         $this->discovery = $discovery ?? new ProjectDiscovery();
-        $this->session = $session;
+        $this->app = $app;
     }
 
     protected function configure(): void
@@ -48,6 +48,6 @@ final class TuiCommand extends Command
             return Command::SUCCESS;
         }
 
-        return ($this->session ?? new InteractiveSession())->run($projects);
+        return ($this->app ?? new TerminalApp())->run($projects);
     }
 }
