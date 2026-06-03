@@ -37,7 +37,8 @@ final class InspectCommand extends Command
             ->addOption('boot', null, InputOption::VALUE_NONE, 'Arranca la app (php artisan) para analizar rutas/config de runtime')
             ->addOption('no-baseline', null, InputOption::VALUE_NONE, 'Ignora doctor.baseline.json y muestra todos los hallazgos')
             ->addOption('diff', null, InputOption::VALUE_OPTIONAL, 'Analiza solo los archivos cambiados respecto a una ref de git (por defecto HEAD)', false)
-            ->addOption('staged', null, InputOption::VALUE_NONE, 'Analiza solo los archivos en el staging area de git');
+            ->addOption('staged', null, InputOption::VALUE_NONE, 'Analiza solo los archivos en el staging area de git')
+            ->addOption('fix', null, InputOption::VALUE_NONE, 'Aplica los arreglos automáticos disponibles antes de reportar');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,12 +50,20 @@ final class InspectCommand extends Command
         if ($onlyFiles === false && !$isJson) {
             $output->writeln('Aviso: no se pudo obtener el diff de git; analizando todo.');
         }
+        $files = $onlyFiles === false ? null : $onlyFiles;
+
+        if ($input->getOption('fix')) {
+            $changed = $this->inspector->fix($path, $files);
+            if (!$isJson) {
+                $output->writeln(sprintf('Arreglos automáticos aplicados en %d archivo(s).', count($changed)));
+            }
+        }
 
         $result = $this->inspector->inspect(
             $path,
             (bool) $input->getOption('boot'),
             !$input->getOption('no-baseline'),
-            $onlyFiles === false ? null : $onlyFiles,
+            $files,
         );
 
         if ($result->bootFailed && !$isJson) {
