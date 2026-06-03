@@ -128,31 +128,33 @@ Instala una *skill* para Claude Code, Cursor, Codex y compañía. El bucle es:
 
 El contrato JSON (`--json`) es estable: `{ score, label, diagnostics: [{ id, category, severity, file, line, message, recommendation }] }`.
 
-## 🖥️ Terminal interactiva (TUI)
+## 🖥️ Terminal interactiva
 
-¿Varios proyectos en una máquina? `tui` los descubre y te deja auditarlos desde un menú, sin teclear rutas:
+`laravel-doctor` sin argumentos (o `laravel-doctor tui`) abre un **entorno full-screen** real
+(construido con [php-tui](https://github.com/php-tui/php-tui)): paneles con bordes, navegación
+por flechas, **búsqueda en vivo** y detalle del hallazgo a color.
 
 ```text
-Elige un proyecto:
-  [0] shop
-  [1] blog
-  [2] Salir
- > 0
-Acción:
-  [0] Auditoría global (estático)
-  [1] Auditoría global (con --boot)
-  [2] Por categoría          # security · performance · eloquent · architecture
-  [3] Por regla concreta     # elige una regla del listado
-  [4] Volver
- > 2
-Categoría:
-  [0] security
-  ...
-laravel-doctor — Score: 88/100 (Needs work)
-...
+┌ 🩺 shop · Score 74/100 (Needs work) ──────────────────────────────────────┐
+└───────────────────────────────────────────────────────────────────────────┘
+┌ Hallazgos (12) ─────────────────────────┐┌ Detalle ───────────────────────┐
+│ › ✖ no-env-outside-config app/Pay.php:12││ ✖ no-env-outside-config        │
+│   ✖ no-raw-sql-interpolation Repo.php:8 ││                                │
+│   ⚠ no-query-in-loop      app/List.php:3││ env() fuera de config/ devuelve│
+│   ⚠ no-all-then-filter    app/User.php:5││ null con la config cacheada…   │
+│                                         ││ → Mueve el valor a config()    │
+└─────────────────────────────────────────┘└────────────────────────────────┘
+┌ ↑↓ mover · / buscar · b runtime · Esc volver · q salir ───────────────────┐
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
-Eliges el **proyecto** y luego qué ejecutar: una **auditoría global** o **algo específico** (una categoría o una sola regla). El menú vuelve a abrirse tras cada auditoría.
+- **↑↓** navega, **Enter** abre el proyecto, **/** activa la **búsqueda en vivo** (filtra la
+  lista al teclear), **b** activa/desactiva el análisis runtime (`--boot`), **Esc** vuelve,
+  **q** sale.
+- Paneles **proyectos** (inicio) y **hallazgos | detalle** (resultados), con score y badges de
+  severidad a color, y rutas relativas.
+
+Requiere una terminal interactiva (TTY); en CI/pipes usa `inspect`.
 
 ## ⚙️ Configuración
 
