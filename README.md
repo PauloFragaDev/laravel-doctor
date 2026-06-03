@@ -10,7 +10,7 @@ Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcio
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
 [![CI](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-149%20passing-22c55e?style=flat)](#desarrollo)
+[![Tests](https://img.shields.io/badge/tests-158%20passing-22c55e?style=flat)](#desarrollo)
 [![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
 
 </div>
@@ -160,6 +160,20 @@ flechas, **búsqueda en vivo** y detalle del hallazgo a color.
 
 Requiere una terminal interactiva (TTY); en CI/pipes usa `inspect`.
 
+## 📋 Línea base (codebases existentes)
+
+¿Muchos hallazgos heredados? Congélalos en una **línea base** y a partir de entonces solo se
+reportan los **nuevos** — ideal para adoptar la herramienta en un proyecto legacy sin ahogarse:
+
+```bash
+laravel-doctor baseline /var/www/html/mi-app   # escribe doctor.baseline.json con lo actual
+laravel-doctor inspect  /var/www/html/mi-app   # ahora solo muestra lo nuevo
+laravel-doctor inspect  /var/www/html/mi-app --no-baseline   # ver todo, ignorando la base
+```
+
+La base se guarda por `(regla, archivo)` con un contador y **sin número de línea**, así que
+aguanta el desplazamiento del código. Commitea `doctor.baseline.json` en el repo.
+
 ## ⚙️ Configuración
 
 Opcional. Crea un `doctor.config.php` (o `doctor.config.json`) en la raíz para desactivar reglas, ajustar severidades o excluir rutas:
@@ -243,6 +257,7 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] Reglas runtime dirigidas por el esquema real (FK sin índice, FK no-bigint)
 - [x] Detección de credenciales hardcodeadas
 - [x] CI propia (matriz PHP 8.2–8.4)
+- [x] Línea base (`doctor.baseline.json`): solo reportar hallazgos nuevos
 - [ ] Publicación en Packagist
 
 > Nota de diseño: el N+1 "por observación real" (ejecutar la app y contar queries) queda
