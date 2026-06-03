@@ -8,6 +8,8 @@ Primera versión funcional.
 
 ### Análisis
 - Motor estático sobre el AST de PHP (`nikic/php-parser`) y scanner propio de Blade.
+- El scanner ignora `vendor`/`node_modules` (a cualquier profundidad), directorios ocultos
+  (`.git`, `.history` de VS Code, `.idea`, `.vscode`), `storage`, `public`, `bootstrap/cache` y `tests`.
 - Inspección en runtime opcional (`--boot`) vía comando artisan `laravel-doctor:manifest`
   (rutas, config y modelos), con degradación a estático si la app no arranca.
 
