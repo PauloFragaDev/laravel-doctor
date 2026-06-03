@@ -23,6 +23,14 @@ final class FileScannerTest extends TestCase
         file_put_contents($this->root . '/tests/UserTest.php', "<?php\n");
         mkdir($this->root . '/resources/views', 0777, true);
         file_put_contents($this->root . '/resources/views/home.blade.php', "<div></div>\n");
+
+        // Snapshots del editor (VS Code Local History) y vendor anidado: ruido a ignorar.
+        mkdir($this->root . '/.history/app', 0777, true);
+        file_put_contents($this->root . '/.history/app/User_20250101.php', "<?php\n");
+        mkdir($this->root . '/packages/foo/vendor/bar', 0777, true);
+        file_put_contents($this->root . '/packages/foo/vendor/bar/Dep.php', "<?php\n");
+        mkdir($this->root . '/packages/foo/src', 0777, true);
+        file_put_contents($this->root . '/packages/foo/src/Real.php', "<?php\n");
     }
 
     protected function tearDown(): void
@@ -39,6 +47,19 @@ final class FileScannerTest extends TestCase
         $this->assertNotContains($this->root . '/vendor/foo/Skip.php', $paths);
         $this->assertNotContains($this->root . '/app/notes.txt', $paths);
         $this->assertNotContains($this->root . '/tests/UserTest.php', $paths);
+    }
+
+    public function test_excludes_hidden_dirs_and_nested_vendor(): void
+    {
+        $files = (new FileScanner())->scan($this->root);
+        $paths = array_map(fn ($f) => $f->path, $files);
+
+        // Snapshots de editor (cualquier carpeta oculta) no son código fuente.
+        $this->assertNotContains($this->root . '/.history/app/User_20250101.php', $paths);
+        // vendor anidado (monorepo) también se ignora, no solo el de la raíz.
+        $this->assertNotContains($this->root . '/packages/foo/vendor/bar/Dep.php', $paths);
+        // ...pero el código real del paquete sí se analiza.
+        $this->assertContains($this->root . '/packages/foo/src/Real.php', $paths);
     }
 
     public function test_source_file_carries_contents(): void
