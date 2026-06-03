@@ -35,9 +35,29 @@ final class Inspector
         $this->extractor = $extractor ?? new ManifestExtractor();
     }
 
-    public function inspect(string $path, bool $boot = false, bool $useBaseline = true): InspectionResult
+    /**
+     * @param string[]|null $onlyFiles Si se pasa, solo analiza esos archivos (rutas; análisis
+     *                                 incremental). Se comparan por realpath.
+     */
+    public function inspect(string $path, bool $boot = false, bool $useBaseline = true, ?array $onlyFiles = null): InspectionResult
     {
         $files = (new FileScanner())->scan($path);
+
+        if ($onlyFiles !== null) {
+            $allowed = [];
+            foreach ($onlyFiles as $only) {
+                $real = realpath($only);
+                if ($real !== false) {
+                    $allowed[$real] = true;
+                }
+            }
+            $files = array_values(array_filter($files, static function ($file) use ($allowed) {
+                $real = realpath($file->path);
+
+                return $real !== false && isset($allowed[$real]);
+            }));
+        }
+
         $phpFiles = array_values(array_filter($files, fn ($f) => $f->type === SourceType::Php));
         $bladeFiles = array_values(array_filter($files, fn ($f) => $f->type === SourceType::Blade));
 
