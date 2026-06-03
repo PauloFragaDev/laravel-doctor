@@ -33,7 +33,8 @@ final class InspectCommand extends Command
             ->addArgument('path', InputArgument::OPTIONAL, 'Directorio a analizar', getcwd())
             ->addOption('json', null, InputOption::VALUE_NONE, 'Emite el reporte como JSON (para agentes)')
             ->addOption('github', null, InputOption::VALUE_NONE, 'Emite anotaciones de GitHub Actions (inline en el PR)')
-            ->addOption('boot', null, InputOption::VALUE_NONE, 'Arranca la app (php artisan) para analizar rutas/config de runtime');
+            ->addOption('boot', null, InputOption::VALUE_NONE, 'Arranca la app (php artisan) para analizar rutas/config de runtime')
+            ->addOption('no-baseline', null, InputOption::VALUE_NONE, 'Ignora doctor.baseline.json y muestra todos los hallazgos');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -41,7 +42,11 @@ final class InspectCommand extends Command
         $path = (string) $input->getArgument('path');
         $isJson = (bool) $input->getOption('json');
 
-        $result = $this->inspector->inspect($path, (bool) $input->getOption('boot'));
+        $result = $this->inspector->inspect(
+            $path,
+            (bool) $input->getOption('boot'),
+            !$input->getOption('no-baseline'),
+        );
 
         if ($result->bootFailed && !$isJson) {
             // En modo JSON no contaminamos la salida; en TTY avisamos de la degradación.
