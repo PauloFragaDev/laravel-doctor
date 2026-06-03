@@ -11,6 +11,7 @@ Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcio
 [![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
 [![CI](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-174%20passing-22c55e?style=flat)](#desarrollo)
+[![Packagist](https://img.shields.io/packagist/v/laravel-doctor/laravel-doctor?style=flat&logo=packagist&logoColor=white)](https://packagist.org/packages/laravel-doctor/laravel-doctor)
 [![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
 
 </div>
@@ -44,37 +45,42 @@ Cada hallazgo trae **dónde** está, **por qué importa** (impacto real, no jerg
 **Requisitos:** PHP 8.2+ y Composer.
 
 ```bash
-git clone https://github.com/PauloFragaDev/laravel-doctor
-cd laravel-doctor && composer install
+# Instálalo como herramienta global (una sola vez):
+composer global require laravel-doctor/laravel-doctor
 
-# 1) Crea el comando global (una sola vez, sin sudo):
-ln -s "$(pwd)/bin/laravel-doctor" ~/.local/bin/laravel-doctor
-
-# 2) Úsalo desde la carpeta que contiene tus apps:
+# Úsalo desde la carpeta que contiene tus apps:
 cd /var/www/html
 laravel-doctor          # abre el menú: elige proyecto y qué auditar
 ```
 
-> El paso 1 enlaza el binario en `~/.local/bin` (que suele estar en el PATH). Si tras hacerlo
-> el comando no aparece, abre una terminal nueva o ejecuta `hash -r`. Si `~/.local/bin` no
-> existe o no está en tu PATH, créalo/añádelo:
-> `mkdir -p ~/.local/bin && export PATH="$HOME/.local/bin:$PATH"`.
+> El binario queda en `~/.composer/vendor/bin` (o `~/.config/composer/vendor/bin`). Si el
+> comando no aparece, añade esa carpeta a tu PATH:
+> `export PATH="$HOME/.composer/vendor/bin:$PATH"` (Composer te indica la ruta exacta al instalar).
 
-**Sin crear el comando global**, dentro del repo siempre puedes usar el binario por su ruta:
+**Dentro de una app concreta** (recomendado para habilitar `--boot`, que arranca la app):
 
 ```bash
-./bin/laravel-doctor                       # menú, usando el directorio actual como base
-./bin/laravel-doctor tui --base /var/www/html
+composer require --dev laravel-doctor/laravel-doctor
+./vendor/bin/laravel-doctor          # audita la app actual
 ```
+
+### Desde el código fuente
+
+Si prefieres clonar el repositorio:
+
+```bash
+git clone https://github.com/PauloFragaDev/laravel-doctor
+cd laravel-doctor && composer install
+./bin/laravel-doctor                 # menú, usando el directorio actual como base
+```
+
+> Ojo: `composer install` en el repo clonado **no** crea por sí solo un comando `laravel-doctor`
+> global (Composer solo enlaza binarios de las *dependencias*, no del propio paquete). Usa
+> `./bin/laravel-doctor` por su ruta, o enlázalo: `ln -s "$(pwd)/bin/laravel-doctor" ~/.local/bin/laravel-doctor`.
 
 > `laravel-doctor` sin argumentos abre la **terminal interactiva** usando el directorio actual
 > como base. Ejecútalo desde la carpeta que contiene tus apps (p. ej. `/var/www/html`) o desde
 > dentro de una app Laravel concreta — el menú la detecta sola.
->
-> Ojo: `composer install` en este repo **no** crea por sí solo un comando `laravel-doctor`
-> (Composer solo enlaza binarios de las *dependencias*, no del propio paquete). Por eso el
-> paso 1. Cuando el paquete esté en **Packagist**, bastará `composer global require
-> laravel-doctor/laravel-doctor`.
 
 ## 🚀 Otros usos
 
@@ -99,8 +105,6 @@ laravel-doctor inspect --staged            # solo lo que está en git add
 # Menú apuntando a otra carpeta de proyectos
 laravel-doctor tui --base /ruta/a/proyectos
 ```
-
-Para usarlo **dentro de una app** (habilita `--boot`): `composer require --dev laravel-doctor/laravel-doctor`.
 
 `inspect` devuelve **exit code 1** si hay algún hallazgo de severidad *error* — perfecto para fallar un pipeline de CI.
 
@@ -278,7 +282,7 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] Línea base (`doctor.baseline.json`): solo reportar hallazgos nuevos
 - [x] Análisis incremental (`--diff` / `--staged`): solo archivos cambiados
 - [x] Autofix (`--fix`) para reglas seguras
-- [ ] Publicación en Packagist
+- [x] Publicación en Packagist
 
 > Nota de diseño: el N+1 "por observación real" (ejecutar la app y contar queries) queda
 > deliberadamente fuera: es no-determinista y contradice el principio de la herramienta.

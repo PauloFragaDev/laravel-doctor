@@ -4,6 +4,18 @@
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "linter", "static-analysis", "security", "performance", "eloquent", "blade", "code-quality", "audit"],
+    "homepage": "https://github.com/PauloFragaDev/laravel-doctor",
+    "authors": [
+        {
+            "name": "Paulo Fraga",
+            "email": "paulo.f.developer@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/PauloFragaDev/laravel-doctor/issues",
+        "source": "https://github.com/PauloFragaDev/laravel-doctor"
+    },
     "require": {
         "php": ">=8.2",
         "nikic/php-parser": "^5.0",
@@ -24,6 +36,9 @@
     "bin": ["bin/laravel-doctor"],
     "config": {
         "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit"
     },
     "extra": {
         "laravel": {
