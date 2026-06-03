@@ -14,7 +14,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 
 final class NoFatControllerMethod implements Rule
 {
-    private const MAX_METHOD_LINES = 40;
+    private const MAX_METHOD_LINES = 60;
 
     public function id(): string { return 'no-fat-controller-method'; }
 

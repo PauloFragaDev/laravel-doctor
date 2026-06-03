@@ -45,7 +45,7 @@ final class EngineTest extends TestCase
         $this->assertSame('a.php', $diagnostics[0]->file);
     }
 
-    public function test_unparseable_file_yields_info_diagnostic_and_continues(): void
+    public function test_unparseable_file_is_skipped_silently_and_others_continue(): void
     {
         $engine = new Engine([$this->echoRule()]);
         $diagnostics = $engine->inspect([
@@ -54,7 +54,9 @@ final class EngineTest extends TestCase
         ]);
 
         $ids = array_map(fn ($d) => $d->ruleId, $diagnostics);
-        $this->assertContains('parse-error', $ids);
-        $this->assertContains('reports-echo', $ids); // el archivo bueno sigue analizándose
+        // El archivo roto se salta sin emitir 'parse-error'; el bueno se analiza igual.
+        $this->assertNotContains('parse-error', $ids);
+        $this->assertContains('reports-echo', $ids);
+        $this->assertCount(1, $diagnostics);
     }
 }

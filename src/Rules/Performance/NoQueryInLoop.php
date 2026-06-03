@@ -10,6 +10,7 @@ use LaravelDoctor\Rules\Rule;
 use LaravelDoctor\Rules\RuleContext;
 use PhpParser\Node;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\Do_;
 use PhpParser\Node\Stmt\For_;
@@ -40,6 +41,11 @@ final class NoQueryInLoop implements Rule
             return;
         }
         if (!in_array($node->name->toString(), self::QUERY_METHODS, true)) {
+            return;
+        }
+        // Solo cadenas de query reales (p. ej. ->where(...)->first()), no un first()/get() de
+        // Colección o un $request->get(): el receptor debe ser otra llamada encadenada.
+        if (!$node->var instanceof MethodCall && !$node->var instanceof StaticCall) {
             return;
         }
         foreach ($context->ancestors() as $ancestor) {
