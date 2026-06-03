@@ -10,7 +10,7 @@ Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcio
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
 [![CI](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-158%20passing-22c55e?style=flat)](#desarrollo)
+[![Tests](https://img.shields.io/badge/tests-164%20passing-22c55e?style=flat)](#desarrollo)
 [![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
 
 </div>
@@ -90,6 +90,11 @@ laravel-doctor inspect --boot
 
 # Anotaciones inline para GitHub Actions
 laravel-doctor inspect --github
+
+# Solo los archivos cambiados (rápido en CI/PRs)
+laravel-doctor inspect --diff              # vs HEAD
+laravel-doctor inspect --diff origin/main  # vs una rama base
+laravel-doctor inspect --staged            # solo lo que está en git add
 
 # Menú apuntando a otra carpeta de proyectos
 laravel-doctor tui --base /ruta/a/proyectos
@@ -258,6 +263,7 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] Detección de credenciales hardcodeadas
 - [x] CI propia (matriz PHP 8.2–8.4)
 - [x] Línea base (`doctor.baseline.json`): solo reportar hallazgos nuevos
+- [x] Análisis incremental (`--diff` / `--staged`): solo archivos cambiados
 - [ ] Publicación en Packagist
 
 > Nota de diseño: el N+1 "por observación real" (ejecutar la app y contar queries) queda
