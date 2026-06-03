@@ -10,7 +10,7 @@ Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcio
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
 [![CI](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-164%20passing-22c55e?style=flat)](#desarrollo)
+[![Tests](https://img.shields.io/badge/tests-169%20passing-22c55e?style=flat)](#desarrollo)
 [![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
 
 </div>
@@ -120,6 +120,19 @@ Dos modos que se complementan:
 | 🎨 **Blade** | `no-unescaped-blade-output` · `no-logic-in-blade` |
 
 ⚡ = requiere `--boot` (datos de runtime).
+
+## 🛠️ Autofix
+
+Algunas reglas tienen arreglo automático y seguro (preservando el formato del código):
+
+```bash
+laravel-doctor inspect /ruta/app --fix
+```
+
+Hoy arregla `prefer-exists-over-count` (`->count() > 0` → `->exists()`) y
+`no-unescaped-blade-output` (`{!! $var !!}` → `{{ $var }}`). El resto de reglas se dejan al
+criterio del dev o de tu agente (que las arregla con la recomendación del hallazgo). Combina
+con `--diff` para arreglar solo lo que tocas.
 
 ## 🤖 Integración con agentes de IA
 
@@ -264,6 +277,7 @@ Arquitectura por capas, cada una testeable por separado: `Scanner` (descubre arc
 - [x] CI propia (matriz PHP 8.2–8.4)
 - [x] Línea base (`doctor.baseline.json`): solo reportar hallazgos nuevos
 - [x] Análisis incremental (`--diff` / `--staged`): solo archivos cambiados
+- [x] Autofix (`--fix`) para reglas seguras
 - [ ] Publicación en Packagist
 
 > Nota de diseño: el N+1 "por observación real" (ejecutar la app y contar queries) queda
