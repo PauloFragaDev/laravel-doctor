@@ -18,11 +18,18 @@ final class NoLogicInBladeTest extends TestCase
             ->inspect([new SourceFile('resources/views/x.blade.php', $code, SourceType::Blade)]);
     }
 
-    public function test_flags_php_block(): void
+    public function test_flags_php_block_with_query(): void
     {
-        $d = $this->analyze("@php\n\$x = 1;\n@endphp");
+        $d = $this->analyze("@php\n\$users = User::all();\n@endphp");
         $this->assertCount(1, $d);
         $this->assertSame('no-logic-in-blade', $d[0]->ruleId);
+    }
+
+    public function test_does_not_flag_trivial_php_block(): void
+    {
+        // Un @php trivial (contador) no es lógica de negocio/DB → no se marca.
+        $d = $this->analyze("@php \$i++; @endphp");
+        $this->assertCount(0, $d);
     }
 
     public function test_flags_query_in_echo(): void
