@@ -10,7 +10,7 @@ Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcio
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
 [![CI](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-140%20passing-22c55e?style=flat)](#desarrollo)
+[![Tests](https://img.shields.io/badge/tests-149%20passing-22c55e?style=flat)](#desarrollo)
 [![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
 
 </div>
@@ -40,6 +40,8 @@ laravel-doctor — Score: 74/100 (Needs work)
 Cada hallazgo trae **dónde** está, **por qué importa** (impacto real, no jerga de linter) y **cómo** arreglarlo.
 
 ## ⚡ Inicio rápido
+
+**Requisitos:** PHP 8.2+ y Composer.
 
 ```bash
 git clone https://github.com/PauloFragaDev/laravel-doctor
@@ -119,7 +121,7 @@ Dos modos que se complementan:
 El diferenciador: laravel-doctor no solo señala los problemas, **se los enseña a tu agente para que los arregle**.
 
 ```bash
-./vendor/bin/laravel-doctor install
+laravel-doctor install          # desde el repo clonado: ./bin/laravel-doctor install
 ```
 
 Instala una *skill* para Claude Code, Cursor, Codex y compañía. El bucle es:
@@ -131,28 +133,30 @@ El contrato JSON (`--json`) es estable: `{ score, label, diagnostics: [{ id, cat
 ## 🖥️ Terminal interactiva
 
 `laravel-doctor` sin argumentos (o `laravel-doctor tui`) abre un **entorno full-screen** real
-(construido con [php-tui](https://github.com/php-tui/php-tui)): paneles con bordes, navegación
-por flechas, **búsqueda en vivo** y detalle del hallazgo a color.
+(construido con [php-tui](https://github.com/php-tui/php-tui)): título a la izquierda y un
+**electrocardiograma animado** a la derecha (braille), paneles con bordes, navegación por
+flechas, **búsqueda en vivo** y detalle del hallazgo a color.
 
 ```text
-┌ 🩺 shop · Score 74/100 (Needs work) ──────────────────────────────────────┐
-└───────────────────────────────────────────────────────────────────────────┘
-┌ Hallazgos (12) ─────────────────────────┐┌ Detalle ───────────────────────┐
-│ › ✖ no-env-outside-config app/Pay.php:12││ ✖ no-env-outside-config        │
-│   ✖ no-raw-sql-interpolation Repo.php:8 ││                                │
-│   ⚠ no-query-in-loop      app/List.php:3││ env() fuera de config/ devuelve│
-│   ⚠ no-all-then-filter    app/User.php:5││ null con la config cacheada…   │
-│                                         ││ → Mueve el valor a config()    │
-└─────────────────────────────────────────┘└────────────────────────────────┘
-┌ ↑↓ mover · / buscar · b runtime · Esc volver · q salir ───────────────────┐
-└───────────────────────────────────────────────────────────────────────────┘
+┌ 🩺 shop · Score 74/100 (Needs work)         ╴╴╴╴╴╴╴╴⡀╱╲⡀╴╴╴╴╴╴╴╴╴╴╴ │
+├─────────────────────────────────────────────────────────────────────────┤
+│ 🔎 (pulsa s para buscar)                                                  │
+├──────────────────────────────────────────┬────────────────────────────────┤
+│ SEGURIDAD (2)                            ││ Detalle                        │
+│  › ✖ no-env-outside-config app/Pay.php:12││ ✖ no-env-outside-config        │
+│    ✖ no-raw-sql-interpolation Repo.php:8 ││ env() fuera de config/…        │
+│ PERFORMANCE (1)                          ││ → Mueve el valor a config()    │
+│    ⚠ no-query-in-loop      app/List.php:3││                                │
+└──────────────────────────────────────────┴────────────────────────────────┘
+┌ ↑↓ mover · Tab/c categoría · s buscar · b runtime · Esc volver · q salir ──┐
 ```
 
-- **↑↓** navega, **Enter** abre el proyecto, **/** activa la **búsqueda en vivo** (filtra la
-  lista al teclear), **b** activa/desactiva el análisis runtime (`--boot`), **Esc** vuelve,
-  **q** sale.
-- Paneles **proyectos** (inicio) y **hallazgos | detalle** (resultados), con score y badges de
-  severidad a color, y rutas relativas.
+- **↑↓** navega · **Enter** abre el proyecto · **s** (o `/`) activa la **búsqueda en vivo** ·
+  **Tab**/**c** cambia de categoría · **b** activa/desactiva el análisis runtime (`--boot`) ·
+  **Esc** vuelve · **q** sale.
+- Paneles **proyectos** (inicio) y **hallazgos | detalle** (resultados): los hallazgos van
+  **agrupados en bloques por categoría**, con score y badges de severidad a color y rutas
+  relativas.
 
 Requiere una terminal interactiva (TTY); en CI/pipes usa `inspect`.
 

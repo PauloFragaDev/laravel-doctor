@@ -42,12 +42,18 @@ final class TuiCommand extends Command
             return Command::SUCCESS;
         }
 
-        if (!$input->isInteractive()) {
-            $output->writeln('El comando tui requiere una terminal interactiva.');
+        if (!$input->isInteractive() || !$this->isTty()) {
+            $output->writeln('El comando tui requiere una terminal interactiva. Para CI o tuberías usa "inspect".');
 
             return Command::SUCCESS;
         }
 
         return ($this->app ?? new TerminalApp())->run($projects);
+    }
+
+    /** Hay una terminal interactiva (TTY) en STDIN (no una tubería/redirección). */
+    private function isTty(): bool
+    {
+        return !defined('STDIN') || !function_exists('stream_isatty') || @stream_isatty(STDIN);
     }
 }
