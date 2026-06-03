@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LaravelDoctor\Console;
 
 use LaravelDoctor\Analysis\Inspector;
+use LaravelDoctor\Git\GitChangedFiles;
 use LaravelDoctor\Reporting\AgentReporter;
 use LaravelDoctor\Reporting\GithubReporter;
 use LaravelDoctor\Reporting\TtyReporter;
@@ -34,7 +35,9 @@ final class InspectCommand extends Command
             ->addOption('json', null, InputOption::VALUE_NONE, 'Emite el reporte como JSON (para agentes)')
             ->addOption('github', null, InputOption::VALUE_NONE, 'Emite anotaciones de GitHub Actions (inline en el PR)')
             ->addOption('boot', null, InputOption::VALUE_NONE, 'Arranca la app (php artisan) para analizar rutas/config de runtime')
-            ->addOption('no-baseline', null, InputOption::VALUE_NONE, 'Ignora doctor.baseline.json y muestra todos los hallazgos');
+            ->addOption('no-baseline', null, InputOption::VALUE_NONE, 'Ignora doctor.baseline.json y muestra todos los hallazgos')
+            ->addOption('diff', null, InputOption::VALUE_OPTIONAL, 'Analiza solo los archivos cambiados respecto a una ref de git (por defecto HEAD)', false)
+            ->addOption('staged', null, InputOption::VALUE_NONE, 'Analiza solo los archivos en el staging area de git');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -42,10 +45,16 @@ final class InspectCommand extends Command
         $path = (string) $input->getArgument('path');
         $isJson = (bool) $input->getOption('json');
 
+        $onlyFiles = $this->changedFiles($input, $path);
+        if ($onlyFiles === false && !$isJson) {
+            $output->writeln('Aviso: no se pudo obtener el diff de git; analizando todo.');
+        }
+
         $result = $this->inspector->inspect(
             $path,
             (bool) $input->getOption('boot'),
             !$input->getOption('no-baseline'),
+            $onlyFiles === false ? null : $onlyFiles,
         );
 
         if ($result->bootFailed && !$isJson) {
@@ -62,5 +71,28 @@ final class InspectCommand extends Command
         $output->write($report);
 
         return $result->hasError() ? Command::FAILURE : Command::SUCCESS;
+    }
+
+    /**
+     * Resuelve los archivos a analizar según --diff/--staged.
+     *
+     * @return string[]|false|null  lista de archivos; null = sin modo incremental; false = git falló
+     */
+    private function changedFiles(InputInterface $input, string $path): array|false|null
+    {
+        $git = new GitChangedFiles();
+
+        if ($input->getOption('staged')) {
+            return $git->staged($path) ?? false;
+        }
+
+        $diff = $input->getOption('diff');
+        if ($diff !== false) {
+            $ref = is_string($diff) && $diff !== '' ? $diff : 'HEAD';
+
+            return $git->since($path, $ref) ?? false;
+        }
+
+        return null;
     }
 }
