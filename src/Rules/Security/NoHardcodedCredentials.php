@@ -39,7 +39,8 @@ final class NoHardcodedCredentials implements Rule
         if (!$node instanceof Assign || !$node->expr instanceof String_) {
             return;
         }
-        if ($node->expr->value === '') {
+        // Ignora valores en blanco/placeholder (p. ej. '' o ' ').
+        if (trim($node->expr->value) === '') {
             return;
         }
 

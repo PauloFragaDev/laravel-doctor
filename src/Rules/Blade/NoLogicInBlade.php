@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace LaravelDoctor\Rules\Blade;
 
 use LaravelDoctor\Blade\BladeConstruct;
-use LaravelDoctor\Blade\BladeConstructKind;
 use LaravelDoctor\Blade\BladeRule;
 use LaravelDoctor\Blade\BladeRuleContext;
 use LaravelDoctor\Diagnostics\Categories;
@@ -32,15 +31,11 @@ final class NoLogicInBlade implements BladeRule
 
     public function enterConstruct(BladeConstruct $construct, BladeRuleContext $context): void
     {
-        if ($construct->kind === BladeConstructKind::PhpBlock) {
-            $context->report($construct, 'Bloque @php en la vista: la lógica no debería vivir en la plantilla.');
-
-            return;
-        }
-
+        // Marca consultas a la DB en la vista (en echoes o en bloques @php). Un @php trivial
+        // (un contador, etc.) NO se marca: el daño concreto es acceder a la base de datos aquí.
         foreach (self::QUERY_TOKENS as $token) {
             if (str_contains($construct->expression, $token)) {
-                $context->report($construct, 'Consulta a la base de datos dentro de la vista: acopla presentación y negocio.');
+                $context->report($construct, 'Acceso a la base de datos dentro de la vista: acopla presentación y negocio.');
 
                 return;
             }

@@ -46,4 +46,10 @@ final class NoHardcodedCredentialsTest extends TestCase
         $d = $this->analyze("<?php \$password = '';");
         $this->assertCount(0, $d);
     }
+
+    public function test_does_not_flag_whitespace_only(): void
+    {
+        $d = $this->analyze("<?php \$token = ' ';");
+        $this->assertCount(0, $d);
+    }
 }
