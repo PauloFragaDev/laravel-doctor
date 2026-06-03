@@ -6,6 +6,8 @@ namespace LaravelDoctor\Analysis;
 
 use LaravelDoctor\Blade\BladeEngine;
 use LaravelDoctor\Blade\BladeRuleRegistry;
+use LaravelDoctor\Config\BaselineApplier;
+use LaravelDoctor\Config\BaselineStorage;
 use LaravelDoctor\Config\ConfigApplier;
 use LaravelDoctor\Config\ConfigLoader;
 use LaravelDoctor\Config\InlineSuppressions;
@@ -33,7 +35,7 @@ final class Inspector
         $this->extractor = $extractor ?? new ManifestExtractor();
     }
 
-    public function inspect(string $path, bool $boot = false): InspectionResult
+    public function inspect(string $path, bool $boot = false, bool $useBaseline = true): InspectionResult
     {
         $files = (new FileScanner())->scan($path);
         $phpFiles = array_values(array_filter($files, fn ($f) => $f->type === SourceType::Php));
@@ -65,6 +67,13 @@ final class Inspector
             $fileContents[$file->path] = $file->contents;
         }
         $diagnostics = (new InlineSuppressions())->filter($diagnostics, $fileContents);
+
+        if ($useBaseline) {
+            $baseline = (new BaselineStorage())->load($path);
+            if ($baseline !== null) {
+                $diagnostics = (new BaselineApplier())->apply($diagnostics, $baseline, $path);
+            }
+        }
 
         $diagnostics = (new Pipeline())->process($diagnostics);
         $score = (new ScoreCalculator())->score($diagnostics);
