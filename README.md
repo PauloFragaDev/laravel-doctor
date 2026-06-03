@@ -10,7 +10,7 @@ Sin magia, sin falsos positivos de relleno: análisis estático del AST + (opcio
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=flat&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-10%20·%2011%20·%2012-FF2D20?style=flat&logo=laravel&logoColor=white)](https://laravel.com)
 [![CI](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/PauloFragaDev/laravel-doctor/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-173%20passing-22c55e?style=flat)](#desarrollo)
+[![Tests](https://img.shields.io/badge/tests-174%20passing-22c55e?style=flat)](#desarrollo)
 [![License](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
 
 </div>

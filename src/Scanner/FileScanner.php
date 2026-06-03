@@ -9,8 +9,14 @@ use RecursiveIteratorIterator;
 
 final class FileScanner
 {
-    private const EXCLUDED_DIRS = [
-        'vendor', 'node_modules', 'storage', '.git', 'bootstrap/cache', 'public', 'tests',
+    /** Nombres de directorio que se ignoran a cualquier profundidad (vendor anidado, etc.). */
+    private const EXCLUDED_NAMES = [
+        'vendor', 'node_modules', 'storage',
+    ];
+
+    /** Rutas relativas a la raíz del proyecto que se ignoran. */
+    private const EXCLUDED_RELATIVE = [
+        'bootstrap/cache', 'public', 'tests',
     ];
 
     /**
@@ -50,7 +56,20 @@ final class FileScanner
     private function isExcluded(string $path, string $root): bool
     {
         $relative = ltrim(substr($path, strlen($root)), '/');
-        foreach (self::EXCLUDED_DIRS as $dir) {
+        $segments = explode('/', $relative);
+        $dirSegments = array_slice($segments, 0, -1);
+
+        foreach ($dirSegments as $segment) {
+            // Directorios ocultos (.git, .history de VS Code, .idea, .vscode...) nunca son fuente.
+            if ($segment !== '' && $segment[0] === '.') {
+                return true;
+            }
+            if (in_array($segment, self::EXCLUDED_NAMES, true)) {
+                return true;
+            }
+        }
+
+        foreach (self::EXCLUDED_RELATIVE as $dir) {
             if ($relative === $dir || str_starts_with($relative, $dir . '/')) {
                 return true;
             }
