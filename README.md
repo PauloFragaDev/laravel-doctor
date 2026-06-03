@@ -41,50 +41,67 @@ Cada hallazgo trae **dónde** está, **por qué importa** (impacto real, no jerg
 
 ## ⚡ Inicio rápido
 
+**Requisitos:** PHP 8.2+ y Composer.
+
 ```bash
 git clone https://github.com/PauloFragaDev/laravel-doctor
 cd laravel-doctor && composer install
-
-laravel-doctor          # abre el menú: elige proyecto y qué auditar
 ```
 
-> `laravel-doctor` (sin argumentos) abre la **terminal interactiva** usando el directorio
-> actual como base. Ejecútalo desde la carpeta que contiene tus apps (p. ej. `/var/www/html`)
-> o desde dentro de una app Laravel concreta — el menú la detecta sola.
-
-**Para tener el comando `laravel-doctor` disponible en cualquier sitio**, instálalo global con
-Composer (una sola vez):
+A partir de aquí el binario es `bin/laravel-doctor`. Úsalo desde la carpeta que contiene tus
+apps Laravel (o pásala con `--base`/como argumento):
 
 ```bash
-composer global require laravel-doctor/laravel-doctor
-# asegúrate de tener el bin global de composer en el PATH:
-#   export PATH="$HOME/.config/composer/vendor/bin:$PATH"
+# Entorno interactivo (elige proyecto y explora los hallazgos)
+./bin/laravel-doctor tui --base /var/www/html
+
+# Auditar una app concreta por terminal
+./bin/laravel-doctor inspect /var/www/html/mi-app
 ```
 
-(Mientras no esté en Packagist, dentro del repo basta `./bin/laravel-doctor`.)
+> **Importante:** `composer install` en este repo **no** crea por sí solo un comando
+> `laravel-doctor` (Composer solo enlaza binarios de las *dependencias*, no del paquete que
+> clonas). Por eso se usa `./bin/laravel-doctor`. El comando interactivo necesita una terminal
+> real (TTY).
+
+### Comando global `laravel-doctor` (opcional, una vez)
+
+Para escribirlo desde cualquier sitio, un symlink sin sudo:
+
+```bash
+ln -s "$(pwd)/bin/laravel-doctor" ~/.local/bin/laravel-doctor
+# si ~/.local/bin no está en tu PATH:  export PATH="$HOME/.local/bin:$PATH"
+laravel-doctor --base /var/www/html
+```
+
+Cuando esté en **Packagist** bastará `composer global require laravel-doctor/laravel-doctor`.
 
 ## 🚀 Otros usos
 
 ```bash
-# Auditar una ruta directamente (sin menú)
-laravel-doctor inspect /var/www/html/mi-app
-
 # Salida JSON estable (para CI o para tu agente de IA)
-laravel-doctor inspect --json
-
-# Análisis en runtime: arranca la app para auditar rutas y config reales
-laravel-doctor inspect --boot
+./bin/laravel-doctor inspect /ruta/app --json
 
 # Anotaciones inline para GitHub Actions
-laravel-doctor inspect --github
+./bin/laravel-doctor inspect /ruta/app --github
 
-# Menú apuntando a otra carpeta de proyectos
-laravel-doctor tui --base /ruta/a/proyectos
+# Análisis en runtime (rutas/config/modelos reales) — requiere instalarlo en la app (ver abajo)
+./bin/laravel-doctor inspect /ruta/app --boot
 ```
 
-Para usarlo **dentro de una app** (habilita `--boot`): `composer require --dev laravel-doctor/laravel-doctor`.
+`inspect` devuelve **exit code 1** si hay algún hallazgo de severidad *error* — perfecto para
+fallar un pipeline de CI.
 
-`inspect` devuelve **exit code 1** si hay algún hallazgo de severidad *error* — perfecto para fallar un pipeline de CI.
+### Dentro de una app (habilita `--boot`)
+
+El análisis estático funciona sin instalar nada en la app. Para `--boot` (datos de runtime),
+instala la herramienta como dependencia del proyecto Laravel; su `ServiceProvider` se
+auto-descubre y habilita el comando `artisan laravel-doctor:manifest`:
+
+```bash
+composer require --dev laravel-doctor/laravel-doctor
+./vendor/bin/laravel-doctor inspect --boot
+```
 
 ## 🔍 Qué detecta
 
