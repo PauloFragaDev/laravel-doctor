@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace LaravelDoctor\Engine;
 
-use LaravelDoctor\Diagnostics\Categories;
 use LaravelDoctor\Diagnostics\Diagnostic;
 use LaravelDoctor\Diagnostics\DiagnosticCollector;
-use LaravelDoctor\Diagnostics\Severity;
 use LaravelDoctor\Rules\Rule;
 use LaravelDoctor\Runtime\RuntimeManifest;
 use LaravelDoctor\Scanner\SourceFile;
@@ -40,16 +38,9 @@ final class Engine
         foreach ($files as $file) {
             try {
                 $stmts = $this->parser->parse($file->contents);
-            } catch (Error $e) {
-                $collector->add(new Diagnostic(
-                    ruleId: 'parse-error',
-                    category: Categories::ARCHITECTURE,
-                    severity: Severity::Info,
-                    file: $file->path,
-                    line: $e->getStartLine() > 0 ? $e->getStartLine() : 1,
-                    message: 'No se pudo analizar este archivo: ' . $e->getRawMessage(),
-                    recommendation: 'Corrige el error de sintaxis para que laravel-doctor pueda revisarlo.',
-                ));
+            } catch (Error) {
+                // Archivo no parseable (a menudo libs de terceros con sintaxis antigua): se
+                // salta en silencio. No es un hallazgo accionable en el código del usuario.
                 continue;
             }
 

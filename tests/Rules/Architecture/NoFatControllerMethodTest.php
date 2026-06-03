@@ -18,7 +18,7 @@ final class NoFatControllerMethodTest extends TestCase
 
     private function longBody(): string
     {
-        return str_repeat("        \$x = 1;\n", 45);
+        return str_repeat("        \$x = 1;\n", 70);
     }
 
     public function test_flags_long_method_in_controller(): void

@@ -36,4 +36,19 @@ final class NoQueryInLoopTest extends TestCase
         $d = $this->analyze("<?php foreach (\$users as \$u) { echo \$u->name; }");
         $this->assertCount(0, $d);
     }
+
+    public function test_does_not_flag_collection_first_on_relation(): void
+    {
+        // $membership->users->first(...) es un first() de Colección en memoria, no una query.
+        $d = $this->analyze("<?php foreach (\$ms as \$m) { \$x = \$m->users->first(fn (\$u) => \$u->active); }");
+        $this->assertCount(0, $d);
+    }
+
+    public function test_does_not_flag_plain_variable_get(): void
+    {
+        // $request->get('x') no es una query Eloquent.
+        $d = $this->analyze("<?php foreach (\$items as \$i) { \$v = \$request->get('x'); }");
+        $this->assertCount(0, $d);
+    }
 }
+
